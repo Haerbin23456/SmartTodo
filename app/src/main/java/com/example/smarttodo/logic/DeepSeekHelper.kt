@@ -1,0 +1,159 @@
+package com.example.smarttodo.logic
+
+import android.util.Log
+import com.example.smarttodo.data.SmartTask
+import com.example.smarttodo.util.Constants
+import com.example.smarttodo.util.TimeUtils
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.suspendCancellableCoroutine
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.IOException
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import kotlin.coroutines.resume
+
+data class AIAnalysisResult(
+    val action: String, // CREATE, MERGE, IGNORE
+    val targetTaskId: Long? = null,
+    val taskData: SmartTaskData? = null,
+    val rawLog: String? = null
+)
+
+data class SmartTaskData(
+    val title: String,
+    val summary: String, // Dynamic log/update
+    val notes: String?,  // Persistent details
+    val scheduledTime: String?,
+    val subtasks: List<String> = emptyList(),
+    val completeness: String
+)
+
+object DeepSeekHelper {
+    private val client = OkHttpClient()
+    
+    suspend fun analyzeContent(
+        newContent: String,
+        existingTasks: List<SmartTask>,
+        apiKey: String,
+        baseUrl: String = Constants.DEFAULT_API_BASE_URL,
+        language: String = "Chinese",
+        onProgress: (String) -> Unit = {}
+    ): AIAnalysisResult = kotlinx.coroutines.withTimeout(30000) { // 30 seconds timeout
+        if (apiKey.isBlank()) {
+            return@withTimeout AIAnalysisResult(
+                action = Constants.ACTION_IGNORE,
+                rawLog = "Error: API Key is missing. Please configure it in Settings."
+            )
+        }
+
+        val json = JSONObject()
+        json.put("model", Constants.DEFAULT_AI_MODEL)
+        json.put("stream", true)
+        json.put("response_format", JSONObject().put("type", "json_object"))
+
+        val currentDateTime = TimeUtils.getCurrentTimeForPrompt()
+
+        val systemPrompt = PromptProvider.getSystemPrompt(existingTasks, language)
+
+        val messages = JSONArray()
+        messages.put(JSONObject().put("role", "system").put("content", systemPrompt))
+        messages.put(JSONObject().put("role", "user").put("content", "New Message: $newContent"))
+
+        json.put("messages", messages)
+
+        val body = json.toString().toRequestBody("application/json".toMediaType())
+        val request = Request.Builder()
+            .url(baseUrl)
+            .addHeader("Authorization", "Bearer $apiKey")
+            .post(body)
+            .build()
+
+        var fullContent = ""
+        try {
+            val response = client.newCall(request).execute()
+            if (!response.isSuccessful) {
+                return@withTimeout AIAnalysisResult(
+                    action = Constants.ACTION_IGNORE,
+                    rawLog = "API Error: ${response.code} - ${response.body.string()}"
+                )
+            }
+
+            val reader = response.body.source().inputStream().bufferedReader()
+            reader.forEachLine { line ->
+                if (line.startsWith("data: ")) {
+                    val data = line.substring(6).trim()
+                    if (data == "[DONE]") return@forEachLine
+                    
+                    try {
+                        val chunk = JSONObject(data)
+                        val choices = chunk.getJSONArray("choices")
+                        if (choices.length() > 0) {
+                            val delta = choices.getJSONObject(0).getJSONObject("delta")
+                            if (delta.has("content")) {
+                                val content = delta.getString("content")
+                                fullContent += content
+                                onProgress(fullContent)
+                            }
+                        }
+                    } catch (e: Exception) { }
+                }
+            }
+            
+            if (fullContent.isBlank()) throw IOException("Empty response from AI")
+             
+             // Pass the actual fullContent as rawLog so it's preserved in DB
+             parseAnalysisResult(fullContent, fullContent)
+ 
+         } catch (e: Exception) {
+             Log.e("DeepSeek", "Streaming error", e)
+             AIAnalysisResult(
+                 action = Constants.ACTION_CREATE,
+                 taskData = SmartTaskData(
+                     title = newContent.take(20),
+                     summary = newContent,
+                     notes = null,
+                     scheduledTime = null,
+                     subtasks = emptyList(),
+                     completeness = SmartTask.COMPLETENESS_MISSING_INFO
+                 ),
+                 rawLog = "Streaming Error: ${e.message}\nPartial Content: $fullContent"
+             )
+         }
+    }
+
+    private fun parseAnalysisResult(content: String, rawLog: String): AIAnalysisResult {
+        val resultJson = JSONObject(content)
+        val action = resultJson.getString("action")
+        val targetTaskId = if (resultJson.has("targetTaskId") && !resultJson.isNull("targetTaskId")) resultJson.getLong("targetTaskId") else null
+        
+        val taskDataJson = if (resultJson.has("taskData") && !resultJson.isNull("taskData")) resultJson.getJSONObject("taskData") else null
+        val taskData = if (taskDataJson != null) {
+            val subtasksJson = taskDataJson.optJSONArray("subtasks")
+            val subtasksList = mutableListOf<String>()
+            if (subtasksJson != null) {
+                for (i in 0 until subtasksJson.length()) {
+                    subtasksList.add(subtasksJson.getString(i))
+                }
+            }
+
+             SmartTaskData(
+                title = taskDataJson.optString("title", "Untitled"),
+                summary = taskDataJson.optString("summary", ""),
+                notes = if (taskDataJson.has("notes") && !taskDataJson.isNull("notes")) taskDataJson.getString("notes") else null,
+                scheduledTime = if (taskDataJson.has("scheduledTime") && !taskDataJson.isNull("scheduledTime")) taskDataJson.getString("scheduledTime") else null,
+                subtasks = subtasksList,
+                completeness = taskDataJson.optString("completeness", SmartTask.COMPLETENESS_MISSING_INFO)
+            )
+        } else null
+
+        return AIAnalysisResult(action, targetTaskId, taskData, rawLog = rawLog)
+    }
+}
