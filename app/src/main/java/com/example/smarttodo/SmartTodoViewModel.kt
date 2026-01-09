@@ -57,24 +57,22 @@ class SmartTodoViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun processNewInput(content: String, sourceApp: String, existingRawId: Long? = null) {
         processingJob = viewModelScope.launch(Dispatchers.IO) {
-            processingMutex.withLock {
-                _isProcessing.value = true
-                try {
-                    TaskProcessor.processContent(
-                        content = content,
-                        sourceApp = sourceApp,
-                        dao = dao,
-                        existingRawId = existingRawId,
-                        apiKey = _apiKey.value,
-                        baseUrl = _apiBaseUrl.value,
-                        scope = viewModelScope
-                    )
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                } finally {
-                    _isProcessing.value = false
-                    processingJob = null
-                }
+            _isProcessing.value = true
+            try {
+                TaskProcessor.processContent(
+                    content = content,
+                    sourceApp = sourceApp,
+                    dao = dao,
+                    existingRawId = existingRawId,
+                    apiKey = _apiKey.value,
+                    baseUrl = _apiBaseUrl.value,
+                    scope = viewModelScope
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                _isProcessing.value = false
+                processingJob = null
             }
         }
     }

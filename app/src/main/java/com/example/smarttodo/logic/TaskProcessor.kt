@@ -13,7 +13,12 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+
 object TaskProcessor {
+    private val globalMutex = Mutex()
+
     suspend fun processContent(
         content: String,
         sourceApp: String,
@@ -22,7 +27,7 @@ object TaskProcessor {
         apiKey: String,
         baseUrl: String = Constants.DEFAULT_API_BASE_URL,
         scope: CoroutineScope
-    ) {
+    ) = globalMutex.withLock {
         val locale = java.util.Locale.getDefault()
         val language = if (locale.language == "zh") "Chinese (Simplified)" else locale.displayLanguage
 
@@ -82,6 +87,17 @@ object TaskProcessor {
 
     private suspend fun handleCreate(result: AIAnalysisResult, rawMsgId: Long, sourceApp: String, dao: TodoDao) {
         result.taskData?.let { data ->
+            // 安全校验：如果内容包含明显的报错信息，拦截创建请求
+            val isGarbage = data.title.contains("Error", ignoreCase = true) || 
+                           data.summary.contains("Streaming Error", ignoreCase = true) ||
+                           data.summary.contains("connection abort", ignoreCase = true)
+            
+            if (isGarbage) {
+                dao.updateRawMessageLog(rawMsgId, "Intercepted garbage content: ${data.summary}")
+                dao.markRawMessageProcessed(rawMsgId, null)
+                return@let
+            }
+
             val timeStamp = TimeUtils.formatToLog()
             dao.insertTaskAndMarkProcessed(
                 SmartTask(

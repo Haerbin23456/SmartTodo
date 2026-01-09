@@ -3,7 +3,7 @@ package com.example.smarttodo.logic
 import com.example.smarttodo.data.SmartTask
 
 object PromptProvider {
-    fun getSystemPrompt(existingTasks: List<SmartTask>, language: String): String {
+    fun getSystemPrompt(existingTasks: List<SmartTask>, language: String, currentTime: String): String {
         val contextJson = existingTasks.joinToString("\n") { 
             val subtasksStr = if (it.subtasks.isNotEmpty()) ", Subtasks: [${it.subtasks.joinToString { s -> s.content }}]" else ""
             "- [ID:${it.id}] ${it.title} (Status:${it.status}, Progress:${it.completeness}%, Deadline:${it.scheduledTime ?: "None"}$subtasksStr, Notes: \"${it.notes}\")" 
@@ -11,6 +11,10 @@ object PromptProvider {
 
         return """
             You are a "Smart Personal Secretary". Your goal is to analyze new messages and update the user's Todo list.
+            
+            ### CURRENT CONTEXT:
+            - **Current Time**: $currentTime
+            - **Language**: $language
             
             ### LANGUAGE RULE (CRITICAL):
             - **All generated content (title, summary, notes, subtasks) MUST be in: $language.**

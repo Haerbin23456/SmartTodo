@@ -4,21 +4,13 @@ import android.util.Log
 import com.example.smarttodo.data.SmartTask
 import com.example.smarttodo.util.Constants
 import com.example.smarttodo.util.TimeUtils
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.suspendCancellableCoroutine
-import okhttp3.Call
-import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.Response
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import kotlin.coroutines.resume
 
 data class AIAnalysisResult(
     val action: String, // CREATE, MERGE, IGNORE
@@ -61,7 +53,7 @@ object DeepSeekHelper {
 
         val currentDateTime = TimeUtils.getCurrentTimeForPrompt()
 
-        val systemPrompt = PromptProvider.getSystemPrompt(existingTasks, language)
+        val systemPrompt = PromptProvider.getSystemPrompt(existingTasks, language, currentDateTime)
 
         val messages = JSONArray()
         messages.put(JSONObject().put("role", "system").put("content", systemPrompt))
@@ -115,45 +107,45 @@ object DeepSeekHelper {
          } catch (e: Exception) {
              Log.e("DeepSeek", "Streaming error", e)
              AIAnalysisResult(
-                 action = Constants.ACTION_CREATE,
-                 taskData = SmartTaskData(
-                     title = newContent.take(20),
-                     summary = newContent,
-                     notes = null,
-                     scheduledTime = null,
-                     subtasks = emptyList(),
-                     completeness = SmartTask.COMPLETENESS_MISSING_INFO
-                 ),
+                 action = Constants.ACTION_IGNORE,
                  rawLog = "Streaming Error: ${e.message}\nPartial Content: $fullContent"
              )
          }
     }
 
     private fun parseAnalysisResult(content: String, rawLog: String): AIAnalysisResult {
-        val resultJson = JSONObject(content)
-        val action = resultJson.getString("action")
-        val targetTaskId = if (resultJson.has("targetTaskId") && !resultJson.isNull("targetTaskId")) resultJson.getLong("targetTaskId") else null
-        
-        val taskDataJson = if (resultJson.has("taskData") && !resultJson.isNull("taskData")) resultJson.getJSONObject("taskData") else null
-        val taskData = if (taskDataJson != null) {
-            val subtasksJson = taskDataJson.optJSONArray("subtasks")
-            val subtasksList = mutableListOf<String>()
-            if (subtasksJson != null) {
-                for (i in 0 until subtasksJson.length()) {
-                    subtasksList.add(subtasksJson.getString(i))
+        return try {
+            val resultJson = JSONObject(content)
+            val action = resultJson.optString("action", Constants.ACTION_IGNORE)
+            val targetTaskId = if (resultJson.has("targetTaskId") && !resultJson.isNull("targetTaskId")) resultJson.getLong("targetTaskId") else null
+            
+            val taskDataJson = if (resultJson.has("taskData") && !resultJson.isNull("taskData")) resultJson.getJSONObject("taskData") else null
+            val taskData = if (taskDataJson != null) {
+                val subtasksJson = taskDataJson.optJSONArray("subtasks")
+                val subtasksList = mutableListOf<String>()
+                if (subtasksJson != null) {
+                    for (i in 0 until subtasksJson.length()) {
+                        subtasksList.add(subtasksJson.getString(i))
+                    }
                 }
-            }
 
-             SmartTaskData(
-                title = taskDataJson.optString("title", "Untitled"),
-                summary = taskDataJson.optString("summary", ""),
-                notes = if (taskDataJson.has("notes") && !taskDataJson.isNull("notes")) taskDataJson.getString("notes") else null,
-                scheduledTime = if (taskDataJson.has("scheduledTime") && !taskDataJson.isNull("scheduledTime")) taskDataJson.getString("scheduledTime") else null,
-                subtasks = subtasksList,
-                completeness = taskDataJson.optString("completeness", SmartTask.COMPLETENESS_MISSING_INFO)
+                 SmartTaskData(
+                    title = taskDataJson.optString("title", "Untitled"),
+                    summary = taskDataJson.optString("summary", ""),
+                    notes = if (taskDataJson.has("notes") && !taskDataJson.isNull("notes")) taskDataJson.getString("notes") else null,
+                    scheduledTime = if (taskDataJson.has("scheduledTime") && !taskDataJson.isNull("scheduledTime")) taskDataJson.getString("scheduledTime") else null,
+                    subtasks = subtasksList,
+                    completeness = taskDataJson.optString("completeness", SmartTask.COMPLETENESS_MISSING_INFO)
+                )
+            } else null
+
+            AIAnalysisResult(action, targetTaskId, taskData, rawLog = rawLog)
+        } catch (e: Exception) {
+            Log.e("DeepSeek", "JSON Parse Error: ${e.message}")
+            AIAnalysisResult(
+                action = Constants.ACTION_IGNORE,
+                rawLog = "JSON Parse Error: ${e.message}\nRaw Content: $content"
             )
-        } else null
-
-        return AIAnalysisResult(action, targetTaskId, taskData, rawLog = rawLog)
+        }
     }
 }

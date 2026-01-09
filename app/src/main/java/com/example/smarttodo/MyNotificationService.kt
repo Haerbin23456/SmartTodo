@@ -10,8 +10,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
-class MyNotificationService : NotificationListenerService() {
+import com.example.smarttodo.util.Constants
 
+class MyNotificationService : NotificationListenerService() {
     private var lastContent = ""
     private var lastTime = 0L
     
@@ -28,7 +29,7 @@ class MyNotificationService : NotificationListenerService() {
         if (sbn.isOngoing) return
 
         val packageName = sbn.packageName
-        val sharedPrefs = getSharedPreferences("SmartTodoPrefs", MODE_PRIVATE)
+        val sharedPrefs = getSharedPreferences(Constants.PREFS_NAME, MODE_PRIVATE)
         val isAllowed = sharedPrefs.getBoolean(packageName, false)
 
         if (!isAllowed) return
@@ -40,20 +41,25 @@ class MyNotificationService : NotificationListenerService() {
         
         // Prioritize bigText, fallback to text
         val fullContent = if (!bigText.isNullOrEmpty()) bigText else text
+        
+        // 过滤掉通知内容完全为空的情况
+        if (fullContent.isNullOrBlank()) return
+        
         val displayContent = if (title.isNotEmpty()) "[$title] $fullContent" else fullContent
 
-        if (displayContent.isBlank()) return
-
         val currentTime = System.currentTimeMillis()
-        if (displayContent == lastContent && (currentTime - lastTime) < 2000) {
+        // 增强去重：5秒内完全相同的内容，或者内容包含明显的“新消息”提示语（通常是更新通知）
+        if (displayContent == lastContent && (currentTime - lastTime) < 5000) {
             return
         }
+        
+        if (displayContent.all { it.isDigit() }) return
 
         lastContent = displayContent
         lastTime = currentTime
 
-        val apiKey = sharedPrefs.getString("api_key", "") ?: ""
-        val baseUrl = sharedPrefs.getString("api_base_url", "https://api.deepseek.com/chat/completions") ?: "https://api.deepseek.com/chat/completions"
+        val apiKey = sharedPrefs.getString(Constants.PREF_KEY_API_KEY, "")?.trim() ?: ""
+        val baseUrl = sharedPrefs.getString(Constants.PREF_KEY_API_BASE_URL, Constants.DEFAULT_API_BASE_URL) ?: Constants.DEFAULT_API_BASE_URL
 
         // Use TaskProcessor to handle DB & AI
         serviceScope.launch {
