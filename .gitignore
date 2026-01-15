@@ -20,3 +20,4 @@
 *.class
 /app/build/
 /app/release/
+/htmlReport/
