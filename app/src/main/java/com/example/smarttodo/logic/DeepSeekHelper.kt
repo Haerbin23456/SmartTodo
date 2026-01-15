@@ -11,6 +11,8 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
+import kotlinx.coroutines.ensureActive
+import kotlin.coroutines.coroutineContext
 
 data class AIAnalysisResult(
     val action: String, // CREATE, MERGE, IGNORE
@@ -84,6 +86,7 @@ object DeepSeekHelper {
 
             val reader = response.body.source().inputStream().bufferedReader()
             reader.forEachLine { line ->
+                coroutineContext.ensureActive() // Check for cancellation
                 if (line.startsWith("data: ")) {
                     val data = line.substring(6).trim()
                     if (data == "[DONE]") return@forEachLine

@@ -14,18 +14,24 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.util.concurrent.ConcurrentHashMap
 
 class SmartTodoViewModel(application: Application) : AndroidViewModel(application) {
     private val db = AppDatabase.getDatabase(application)
     private val dao = db.todoDao()
-    private val processingMutex = Mutex() // Mutex to serialize processing
     private val sharedPrefs = application.getSharedPreferences(Constants.PREFS_NAME, android.content.Context.MODE_PRIVATE)
 
-    private val _isProcessing = MutableStateFlow(false)
-    val isProcessing = _isProcessing.asStateFlow()
+    // Derived processing state from database stream
+    val messageStream = dao.getAllRawMessages()
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    val isProcessing = messageStream.map { messages ->
+        messages.any { it.status == RawMessage.STATUS_PROCESSING || it.status == RawMessage.STATUS_PENDING }
+    }.stateIn(viewModelScope, SharingStarted.Lazily, false)
     
     // Config State
     private val _apiKey = MutableStateFlow(sharedPrefs.getString(Constants.PREF_KEY_API_KEY, "") ?: "")
@@ -34,22 +40,18 @@ class SmartTodoViewModel(application: Application) : AndroidViewModel(applicatio
     private val _apiBaseUrl = MutableStateFlow(sharedPrefs.getString(Constants.PREF_KEY_API_BASE_URL, Constants.DEFAULT_API_BASE_URL) ?: Constants.DEFAULT_API_BASE_URL)
     val apiBaseUrl = _apiBaseUrl.asStateFlow()
 
+    private val processingJobs = ConcurrentHashMap<Long, Job>()
+
     init {
         viewModelScope.launch(Dispatchers.IO) {
             dao.resetStuckMessages()
         }
     }
 
-    private var processingJob: Job? = null
-
     val activeTasks = dao.getActiveTasks()
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     val draftTasks = dao.getDraftTasks()
-        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
-
-    // Stream shows all messages (history), not just unprocessed
-    val messageStream = dao.getAllRawMessages()
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
         
     fun saveApiConfig(key: String, url: String) {
@@ -62,36 +64,48 @@ class SmartTodoViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun processNewInput(content: String, sourceApp: String, existingRawId: Long? = null) {
-        processingJob = viewModelScope.launch(Dispatchers.IO) {
-            _isProcessing.value = true
-            try {
-                TaskProcessor.processContent(
+        // We need a stable ID to track the job. If existingRawId is null, we'll get it from processContent.
+        // But we want to track it immediately. Let's pre-insert if needed.
+        viewModelScope.launch(Dispatchers.IO) {
+            val rawMsgId = existingRawId ?: dao.insertRawMessage(
+                RawMessage(
                     content = content,
                     sourceApp = sourceApp,
-                    dao = dao,
-                    existingRawId = existingRawId,
-                    apiKey = _apiKey.value,
-                    baseUrl = _apiBaseUrl.value,
-                    scope = viewModelScope
+                    timestamp = System.currentTimeMillis()
                 )
-            } catch (e: Exception) {
-                e.printStackTrace()
-            } finally {
-                _isProcessing.value = false
-                processingJob = null
+            )
+
+            val job = launch(Dispatchers.IO) {
+                try {
+                    TaskProcessor.processContent(
+                        content = content,
+                        sourceApp = sourceApp,
+                        dao = dao,
+                        existingRawId = rawMsgId,
+                        apiKey = _apiKey.value,
+                        baseUrl = _apiBaseUrl.value,
+                        scope = viewModelScope
+                    )
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                } finally {
+                    processingJobs.remove(rawMsgId)
+                }
             }
+            processingJobs[rawMsgId] = job
         }
     }
 
     fun cancelProcessing() {
-        processingJob?.cancel()
-        _isProcessing.value = false
-        processingJob = null
+        processingJobs.values.forEach { it.cancel() }
+        processingJobs.clear()
+        // Database states will be updated via cancelAllMessages or individually
     }
 
     fun cancelMessage(msgId: Long) {
         viewModelScope.launch(Dispatchers.IO) {
             dao.cancelMessage(msgId)
+            processingJobs.remove(msgId)?.cancel()
         }
     }
 

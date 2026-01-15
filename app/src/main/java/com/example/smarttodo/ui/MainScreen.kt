@@ -61,15 +61,6 @@ fun MainScreen(
                     },
                     scrollBehavior = scrollBehavior
                 )
-                AnimatedVisibility(
-                    visible = isProcessing,
-                    enter = expandVertically() + fadeIn(),
-                    exit = shrinkVertically() + fadeOut()
-                ) {
-                    ProcessingIndicator(
-                        onCancel = { viewModel.cancelProcessing() }
-                    )
-                }
             }
         },
         floatingActionButton = {
@@ -142,50 +133,6 @@ fun MainScreen(
             initialBaseUrl = apiBaseUrl,
             context = context
         )
-    }
-}
-
-@Composable
-fun ProcessingIndicator(onCancel: () -> Unit) {
-    Surface(
-        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column {
-            LinearProgressIndicator(
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.primary,
-                trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-            )
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        "AI 正在分析中...",
-                        style = MaterialTheme.typography.labelMedium, 
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
-                TextButton(
-                    onClick = onCancel,
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                    modifier = Modifier.height(24.dp)
-                ) {
-                    Text("停止", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.error)
-                }
-            }
-        }
     }
 }
 
