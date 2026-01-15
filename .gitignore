@@ -2,6 +2,11 @@
 .gradle
 /local.properties
 /.idea
+
+# Local drawings and diagrams
+/新的图/
+*.drawio
+*.drawio.bkp
 /.kotlin
 /.trae/
 /.vscode/
