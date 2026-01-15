@@ -9,7 +9,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 object SmartTodoCardDefaults {
-    val CardShape = RoundedCornerShape(16.dp)
+    val OuterRadius = 20.dp
+    val InnerRadius = 12.dp
+    val CardShape = RoundedCornerShape(OuterRadius)
+    val InnerShape = RoundedCornerShape(InnerRadius)
     
     @Composable
     fun cardBorder(
@@ -17,7 +20,7 @@ object SmartTodoCardDefaults {
     ) = BorderStroke(
         width = 0.5.dp,
         color = if (isError) MaterialTheme.colorScheme.error.copy(alpha = 0.5f) 
-                else MaterialTheme.colorScheme.outlineVariant
+                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
     )
 
     @Composable

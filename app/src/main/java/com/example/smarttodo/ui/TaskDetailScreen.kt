@@ -3,6 +3,7 @@ package com.example.smarttodo.ui
 import android.content.Intent
 import android.provider.CalendarContract
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.expandVertically
 import androidx.compose.foundation.layout.*
@@ -29,8 +30,9 @@ import com.example.smarttodo.SmartTodoViewModel
 import com.example.smarttodo.data.RawMessage
 import com.example.smarttodo.data.SmartTask
 import com.example.smarttodo.data.SubTaskItem
-import com.example.smarttodo.ui.components.SmartOutlinedCard
 import com.example.smarttodo.ui.components.LogDetailDialog
+import com.example.smarttodo.ui.components.SmartTodoCardDefaults
+import com.example.smarttodo.ui.components.SmartOutlinedCard
 import dev.jeziellago.compose.markdowntext.MarkdownText
 import java.text.SimpleDateFormat
 import java.util.*
@@ -54,6 +56,7 @@ fun TaskDetailScreen(
     var scheduledTime by remember { mutableStateOf("") }
     val subtasks = remember { mutableStateListOf<SubTaskItem>() }
     var isEditingNotes by remember { mutableStateOf(false) }
+    var isNotesExpanded by remember { mutableStateOf(false) }
 
     // Date/Time Picker State
     var showDatePicker by remember { mutableStateOf(false) }
@@ -191,7 +194,8 @@ fun TaskDetailScreen(
                 item {
                     OutlinedCard(
                         colors = CardDefaults.outlinedCardColors(containerColor = Color.Transparent),
-                        border = CardDefaults.outlinedCardBorder().copy(width = 0.5.dp),
+                        border = SmartTodoCardDefaults.cardBorder(),
+                        shape = SmartTodoCardDefaults.CardShape,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         TextField(
@@ -215,7 +219,11 @@ fun TaskDetailScreen(
                     SectionHeader("详细信息", Icons.Default.Info)
                     ElevatedCard(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(24.dp)
+                        shape = SmartTodoCardDefaults.CardShape,
+                        colors = CardDefaults.elevatedCardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        ),
+                        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
                     ) {
                         Column(Modifier.padding(16.dp)) {
                             Row(
@@ -246,25 +254,39 @@ fun TaskDetailScreen(
                                         focusedIndicatorColor = Color.Transparent,
                                         unfocusedIndicatorColor = Color.Transparent
                                     ),
-                                    shape = RoundedCornerShape(16.dp)
+                                    shape = SmartTodoCardDefaults.InnerShape
                                 )
                             } else {
                                 Surface(
-                                    onClick = { isEditingNotes = true },
+                                    onClick = { 
+                                        if (notes.length > 200) {
+                                            isNotesExpanded = !isNotesExpanded
+                                        } else {
+                                            isEditingNotes = true
+                                        }
+                                    },
                                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                                    shape = RoundedCornerShape(16.dp),
-                                    modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp)
+                                    shape = SmartTodoCardDefaults.InnerShape,
+                                    modifier = Modifier.fillMaxWidth().animateContentSize()
                                 ) {
-                                    Box(modifier = Modifier.padding(12.dp)) {
+                                    Column(modifier = Modifier.padding(12.dp)) {
                                         if (notes.isBlank()) {
                                             Text("补充更多细节...", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
                                         } else {
                                             MarkdownText(
-                                                markdown = notes,
+                                                markdown = if (isNotesExpanded || notes.length <= 200) notes else notes.take(200) + "...",
                                                 style = MaterialTheme.typography.bodyMedium.copy(
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                                 )
                                             )
+                                            if (notes.length > 200) {
+                                                Text(
+                                                    if (isNotesExpanded) "收起" else "展开全文",
+                                                    style = MaterialTheme.typography.labelMedium,
+                                                    color = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.padding(top = 8.dp).align(Alignment.End)
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -275,7 +297,7 @@ fun TaskDetailScreen(
                             Surface(
                                 onClick = { showDatePicker = true },
                                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                                shape = RoundedCornerShape(16.dp),
+                                shape = SmartTodoCardDefaults.InnerShape,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -296,39 +318,51 @@ fun TaskDetailScreen(
                 // --- Checklist ---
                 item {
                     SectionHeader("清单步骤", Icons.Default.Checklist)
-                }
-                itemsIndexed(subtasks) { index, item ->
-                    Box(modifier = Modifier.animateItem()) {
-                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(
-                                checked = item.isDone,
-                                onCheckedChange = { subtasks[index] = item.copy(isDone = it) }
-                            )
-                            TextField(
-                                value = item.content,
-                                onValueChange = { subtasks[index] = item.copy(content = it) },
-                                modifier = Modifier.weight(1f),
-                                textStyle = MaterialTheme.typography.bodyLarge.copy(
-                                    textDecoration = if (item.isDone) TextDecoration.LineThrough else null
-                                ),
-                                colors = TextFieldDefaults.colors(
-                                    focusedContainerColor = Color.Transparent,
-                                    unfocusedContainerColor = Color.Transparent,
-                                    focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent
-                                )
-                            )
-                            IconButton(onClick = { subtasks.removeAt(index) }) {
-                                Icon(Icons.Default.Close, null, Modifier.size(20.dp))
+                    OutlinedCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = SmartTodoCardDefaults.CardShape,
+                        border = SmartTodoCardDefaults.cardBorder()
+                    ) {
+                        Column(modifier = Modifier.padding(8.dp)) {
+                            subtasks.forEachIndexed { index, item ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().animateContentSize(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Checkbox(
+                                        checked = item.isDone,
+                                        onCheckedChange = { subtasks[index] = item.copy(isDone = it) }
+                                    )
+                                    TextField(
+                                        value = item.content,
+                                        onValueChange = { subtasks[index] = item.copy(content = it) },
+                                        modifier = Modifier.weight(1f),
+                                        placeholder = { Text("输入步骤...", style = MaterialTheme.typography.bodyMedium) },
+                                        textStyle = MaterialTheme.typography.bodyLarge.copy(
+                                            textDecoration = if (item.isDone) TextDecoration.LineThrough else null,
+                                            color = if (item.isDone) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface
+                                        ),
+                                        colors = TextFieldDefaults.colors(
+                                            focusedContainerColor = Color.Transparent,
+                                            unfocusedContainerColor = Color.Transparent,
+                                            focusedIndicatorColor = Color.Transparent,
+                                            unfocusedIndicatorColor = Color.Transparent
+                                        )
+                                    )
+                                    IconButton(onClick = { subtasks.removeAt(index) }) {
+                                        Icon(Icons.Default.Close, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.outline)
+                                    }
+                                }
+                            }
+                            TextButton(
+                                onClick = { subtasks.add(SubTaskItem("")) },
+                                modifier = Modifier.padding(start = 4.dp)
+                            ) {
+                                Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("添加步骤")
                             }
                         }
-                    }
-                }
-                item {
-                    TextButton(onClick = { subtasks.add(SubTaskItem("")) }) {
-                        Icon(Icons.Default.Add, null)
-                        Spacer(Modifier.width(8.dp))
-                        Text("添加步骤")
                     }
                 }
 
@@ -337,8 +371,8 @@ fun TaskDetailScreen(
                     SectionHeader("AI 摘要", Icons.Default.AutoAwesome)
                     OutlinedCard(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(24.dp),
-                        border = CardDefaults.outlinedCardBorder().copy(width = 0.5.dp)
+                        shape = SmartTodoCardDefaults.CardShape,
+                        border = SmartTodoCardDefaults.cardBorder()
                     ) {
                         MarkdownText(
                             markdown = summary,

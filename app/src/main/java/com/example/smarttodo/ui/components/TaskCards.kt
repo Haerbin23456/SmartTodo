@@ -27,7 +27,7 @@ fun SmartTaskCard(
 ) {
     OutlinedCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = SmartTodoCardDefaults.CardShape,
         colors = CardDefaults.outlinedCardColors(
             containerColor = if (task.status == SmartTask.STATUS_DONE) 
                 MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f) 
@@ -153,7 +153,7 @@ fun InboxCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
+        shape = SmartTodoCardDefaults.CardShape,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f)
         ),
@@ -170,7 +170,7 @@ fun InboxCard(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        task.notes ?: "", 
+                        task.notes, 
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f),
                         maxLines = 3,
@@ -190,7 +190,7 @@ fun InboxCard(
                 Spacer(modifier = Modifier.width(8.dp))
                 Button(
                     onClick = onConfirm,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = SmartTodoCardDefaults.InnerShape,
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp))

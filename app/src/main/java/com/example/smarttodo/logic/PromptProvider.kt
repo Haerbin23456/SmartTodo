@@ -55,6 +55,7 @@ object PromptProvider {
               - **summary (Delta/APPEND logic)**: 
                 - This is a brief log of the current update. It will be **APPENDED** to the task's history log.
                 - It should ONLY contain NEW information or a concise summary of what changed in THIS interaction.
+                - **Style**: Use Markdown for better readability (e.g., bullet points, bold keywords).
               - **notes (State/OVERWRITE logic)**: 
                 - This is the "Source of Truth" for detailed content. It will **OVERWRITE** the existing notes field entirely.
                 - **Core Principle**: Notes must be **Intuitive and Useful**.

@@ -241,7 +241,7 @@ fun RawMessageItem(
                 Spacer(modifier = Modifier.height(8.dp))
                 Surface(
                     color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-                    shape = RoundedCornerShape(4.dp)
+                    shape = SmartTodoCardDefaults.InnerShape
                 ) {
                     Text(
                         resultSummary,
