@@ -43,6 +43,9 @@ class SmartTodoViewModel(application: Application) : AndroidViewModel(applicatio
     private val _customPrompt = MutableStateFlow(sharedPrefs.getString(Constants.PREF_KEY_CUSTOM_PROMPT, null))
     val customPrompt = _customPrompt.asStateFlow()
 
+    private val _silenceTimeout = MutableStateFlow(sharedPrefs.getInt(Constants.PREF_KEY_SILENCE_TIMEOUT, Constants.DEFAULT_SILENCE_TIMEOUT_SEC))
+    val silenceTimeout = _silenceTimeout.asStateFlow()
+
     private val processingJobs = ConcurrentHashMap<Long, Job>()
 
     init {
@@ -73,6 +76,13 @@ class SmartTodoViewModel(application: Application) : AndroidViewModel(applicatio
         _customPrompt.value = prompt
     }
 
+    fun saveSilenceTimeout(seconds: Int) {
+        sharedPrefs.edit()
+            .putInt(Constants.PREF_KEY_SILENCE_TIMEOUT, seconds)
+            .apply()
+        _silenceTimeout.value = seconds
+    }
+
     fun processNewInput(content: String, sourceApp: String, existingRawId: Long? = null) {
         // We need a stable ID to track the job. If existingRawId is null, we'll get it from processContent.
         // But we want to track it immediately. Let's pre-insert if needed.
@@ -95,6 +105,7 @@ class SmartTodoViewModel(application: Application) : AndroidViewModel(applicatio
                         apiKey = _apiKey.value,
                         baseUrl = _apiBaseUrl.value,
                         customPrompt = _customPrompt.value,
+                        silenceTimeoutSec = _silenceTimeout.value,
                         scope = viewModelScope
                     )
                 } catch (e: Exception) {

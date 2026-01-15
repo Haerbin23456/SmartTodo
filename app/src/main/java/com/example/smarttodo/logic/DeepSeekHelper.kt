@@ -33,7 +33,7 @@ data class SmartTaskData(
 object DeepSeekHelper {
     private val client = OkHttpClient.Builder()
         .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
-        .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+        .readTimeout(120, java.util.concurrent.TimeUnit.SECONDS)
         .writeTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
         .build()
     
@@ -43,9 +43,10 @@ object DeepSeekHelper {
         apiKey: String,
         baseUrl: String = Constants.DEFAULT_API_BASE_URL,
         customPrompt: String? = null,
+        silenceTimeoutSec: Int = Constants.DEFAULT_SILENCE_TIMEOUT_SEC,
         language: String = "Chinese",
         onProgress: (String) -> Unit = {}
-    ): AIAnalysisResult = kotlinx.coroutines.withTimeout(30000) { // 30 seconds timeout
+    ): AIAnalysisResult = kotlinx.coroutines.withTimeout(120000) { // 2 minutes max global timeout
         if (apiKey.isBlank()) {
             return@withTimeout AIAnalysisResult(
                 action = Constants.ACTION_IGNORE,
@@ -76,6 +77,9 @@ object DeepSeekHelper {
             .build()
 
         var fullContent = ""
+        var lastUpdateTime = System.currentTimeMillis()
+        val silenceTimeoutMs = silenceTimeoutSec * 1000L
+
         try {
             val response = client.newCall(request).execute()
             if (!response.isSuccessful) {
@@ -88,6 +92,12 @@ object DeepSeekHelper {
             val reader = response.body.source().inputStream().bufferedReader()
             reader.forEachLine { line ->
                 coroutineContext.ensureActive() // Check for cancellation
+                
+                // Check for silence timeout
+                if (System.currentTimeMillis() - lastUpdateTime > silenceTimeoutMs) {
+                    throw IOException("AI output stalled for more than $silenceTimeoutSec seconds")
+                }
+
                 if (line.startsWith("data: ")) {
                     val data = line.substring(6).trim()
                     if (data == "[DONE]") return@forEachLine
@@ -100,6 +110,7 @@ object DeepSeekHelper {
                             if (delta.has("content")) {
                                 val content = delta.getString("content")
                                 fullContent += content
+                                lastUpdateTime = System.currentTimeMillis() // Reset timer on new content
                                 onProgress(fullContent)
                             }
                         }

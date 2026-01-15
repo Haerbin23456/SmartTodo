@@ -10,6 +10,8 @@ object Constants {
     const val PREF_KEY_API_KEY = "api_key"
     const val PREF_KEY_API_BASE_URL = "api_base_url"
     const val PREF_KEY_CUSTOM_PROMPT = "custom_prompt"
+    const val PREF_KEY_SILENCE_TIMEOUT = "silence_timeout"
+    const val DEFAULT_SILENCE_TIMEOUT_SEC = 15
     
     // AI Actions
     const val ACTION_CREATE = "CREATE"

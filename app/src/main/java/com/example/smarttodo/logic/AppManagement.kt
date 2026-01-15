@@ -79,15 +79,17 @@ fun getInstalledApps(context: Context): List<AppInfo> {
 @Composable
 fun SettingsDialog(
     onDismiss: () -> Unit,
-    onSave: (String, String, String?) -> Unit,
+    onSave: (String, String, String?, Int) -> Unit,
     initialApiKey: String,
     initialBaseUrl: String,
     initialPrompt: String?,
+    initialSilenceTimeout: Int,
     context: Context
 ) {
     var apiKey by remember { mutableStateOf(initialApiKey) }
     var baseUrl by remember { mutableStateOf(initialBaseUrl) }
     var prompt by remember { mutableStateOf(initialPrompt ?: PromptProvider.getDefaultPrompt()) }
+    var silenceTimeout by remember { mutableIntStateOf(initialSilenceTimeout) }
     var showPassword by remember { mutableStateOf(false) }
     var showPromptEditor by remember { mutableStateOf(false) }
 
@@ -165,6 +167,29 @@ fun SettingsDialog(
                     placeholder = { Text("https://api.deepseek.com/chat/completions") }
                 )
 
+                // Silence Timeout Input
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("输出停滞自动断开", style = MaterialTheme.typography.labelLarge)
+                        Text("${silenceTimeout}秒", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                    }
+                    Slider(
+                        value = silenceTimeout.toFloat(),
+                        onValueChange = { silenceTimeout = it.toInt() },
+                        valueRange = 5f..60f,
+                        steps = 11 // 5, 10, 15, ..., 60
+                    )
+                    Text(
+                        "当 AI 超过该时间没有新字输出时，将自动停止并保存当前结果。",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                }
+
                 HorizontalDivider()
 
                 // Prompt Editor Link
@@ -195,7 +220,7 @@ fun SettingsDialog(
         confirmButton = {
             Button(onClick = {
                 val finalPrompt = if (prompt == PromptProvider.getDefaultPrompt()) null else prompt
-                onSave(apiKey, baseUrl, finalPrompt)
+                onSave(apiKey, baseUrl, finalPrompt, silenceTimeout)
                 onDismiss()
             }) {
                 Text("保存")

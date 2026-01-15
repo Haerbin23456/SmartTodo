@@ -39,6 +39,7 @@ object TaskProcessor {
         apiKey: String,
         baseUrl: String = Constants.DEFAULT_API_BASE_URL,
         customPrompt: String? = null,
+        silenceTimeoutSec: Int = Constants.DEFAULT_SILENCE_TIMEOUT_SEC,
         scope: CoroutineScope
     ) {
         val locale = java.util.Locale.getDefault()
@@ -72,6 +73,7 @@ object TaskProcessor {
                     apiKey = apiKey,
                     baseUrl = baseUrl,
                     customPrompt = customPrompt,
+                    silenceTimeoutSec = silenceTimeoutSec,
                     language = language,
                     onProgress = { currentLog ->
                         scope.launch(Dispatchers.IO) {

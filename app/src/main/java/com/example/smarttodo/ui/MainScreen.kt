@@ -35,6 +35,7 @@ fun MainScreen(
     val apiKey by viewModel.apiKey.collectAsState()
     val apiBaseUrl by viewModel.apiBaseUrl.collectAsState()
     val customPrompt by viewModel.customPrompt.collectAsState()
+    val silenceTimeout by viewModel.silenceTimeout.collectAsState()
 
     var showManualInput by remember { mutableStateOf(false) }
     var showAppDialog by remember { mutableStateOf(false) }
@@ -129,13 +130,15 @@ fun MainScreen(
     if (showSettingsDialog) {
             SettingsDialog(
                 onDismiss = { showSettingsDialog = false },
-                onSave = { key, url, prompt -> 
+                onSave = { key, url, prompt, timeout -> 
                     viewModel.saveApiConfig(key, url)
                     viewModel.saveCustomPrompt(prompt)
+                    viewModel.saveSilenceTimeout(timeout)
                 },
                 initialApiKey = apiKey,
                 initialBaseUrl = apiBaseUrl,
                 initialPrompt = customPrompt,
+                initialSilenceTimeout = silenceTimeout,
                 context = context
             )
         }
