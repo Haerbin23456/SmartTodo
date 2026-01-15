@@ -47,9 +47,10 @@ object PromptProvider {
                - **notes (State/OVERWRITE logic)**: 
                  - This is the "Source of Truth" for detailed content. It will **OVERWRITE** the existing notes field entirely.
                  - **Priority**: Place the MOST IMPORTANT information at the VERY TOP of the notes to ensure they are immediately useful to the user.
-                 - **Organization**: Do NOT just append lines. You MUST distill and organize the information logically using Markdown headers or bullet points.
-                 - **Vague Time Handling**: If the user provides a vague time (e.g., "afternoon", "unspecified time") that cannot fit into `scheduledTime`, you MUST put a "**🕒 Time Info:** [Vague Time]" section at the VERY TOP.
-                 - You MUST provide the **COMPLETE, FULL** merged, prioritized, and organized notes.
+                - **Organization**: Do NOT just append lines. You MUST distill and organize the information logically using Markdown headers or bullet points.
+                - **Conciseness**: Avoid repeating information that is already clearly stated. If new information makes old information redundant or incorrect, REPLACE it. The notes should be a clean, current state of the task, not a messy history log.
+                - **Vague Time Handling**: If the user provides a vague time (e.g., "afternoon", "unspecified time") that cannot fit into `scheduledTime`, you MUST put a "**🕒 待定时间:** [Vague Time]" section at the VERY TOP.
+                - You MUST provide the **COMPLETE, FULL** merged, prioritized, and organized notes.
                - **subtasks**: List ONLY the new sub-steps identified in this message. They will be appended to the existing list.
 
             5. **Data Persistence Example**:

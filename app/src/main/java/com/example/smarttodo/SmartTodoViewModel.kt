@@ -34,6 +34,12 @@ class SmartTodoViewModel(application: Application) : AndroidViewModel(applicatio
     private val _apiBaseUrl = MutableStateFlow(sharedPrefs.getString(Constants.PREF_KEY_API_BASE_URL, Constants.DEFAULT_API_BASE_URL) ?: Constants.DEFAULT_API_BASE_URL)
     val apiBaseUrl = _apiBaseUrl.asStateFlow()
 
+    init {
+        viewModelScope.launch(Dispatchers.IO) {
+            dao.resetStuckMessages()
+        }
+    }
+
     private var processingJob: Job? = null
 
     val activeTasks = dao.getActiveTasks()
@@ -81,6 +87,19 @@ class SmartTodoViewModel(application: Application) : AndroidViewModel(applicatio
         processingJob?.cancel()
         _isProcessing.value = false
         processingJob = null
+    }
+
+    fun cancelMessage(msgId: Long) {
+        viewModelScope.launch(Dispatchers.IO) {
+            dao.cancelMessage(msgId)
+        }
+    }
+
+    fun cancelAllMessages() {
+        viewModelScope.launch(Dispatchers.IO) {
+            dao.cancelAllMessages()
+            cancelProcessing()
+        }
     }
 
     fun confirmTask(task: SmartTask) {

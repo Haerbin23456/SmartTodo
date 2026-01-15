@@ -39,7 +39,7 @@ object TaskProcessor {
         apiKey: String,
         baseUrl: String = Constants.DEFAULT_API_BASE_URL,
         scope: CoroutineScope
-    ) = globalMutex.withLock {
+    ) {
         val locale = java.util.Locale.getDefault()
         val language = if (locale.language == "zh") "Chinese (Simplified)" else locale.displayLanguage
 
@@ -52,35 +52,42 @@ object TaskProcessor {
                 )
             )
 
+        // 立即标记为处理中，以便 UI 显示转圈
         dao.updateRawMessageStatus(rawMsgId, RawMessage.STATUS_PROCESSING)
 
-        try {
-            val activeTasks = dao.getActiveTasks().firstOrNull()?.take(10) ?: emptyList()
-            val draftTasks = dao.getDraftTasks().firstOrNull()?.take(10) ?: emptyList()
-            val allContextTasks = activeTasks + draftTasks
+        globalMutex.withLock {
+            // 再次检查状态，防止在等待锁的过程中被手动取消了
+            val currentMsg = dao.getRawMessageById(rawMsgId)
+            if (currentMsg?.status == RawMessage.STATUS_CANCELLED) return@withLock
 
-            val result = DeepSeekHelper.analyzeContent(
-                newContent = content,
-                existingTasks = allContextTasks,
-                apiKey = apiKey,
-                baseUrl = baseUrl,
-                language = language,
-                onProgress = { currentLog ->
-                    scope.launch(Dispatchers.IO) {
-                        dao.updateRawMessageLog(rawMsgId, currentLog)
+            try {
+                val activeTasks = dao.getActiveTasks().firstOrNull()?.take(10) ?: emptyList()
+                val draftTasks = dao.getDraftTasks().firstOrNull()?.take(10) ?: emptyList()
+                val allContextTasks = activeTasks + draftTasks
+
+                val result = DeepSeekHelper.analyzeContent(
+                    newContent = content,
+                    existingTasks = allContextTasks,
+                    apiKey = apiKey,
+                    baseUrl = baseUrl,
+                    language = language,
+                    onProgress = { currentLog ->
+                        scope.launch(Dispatchers.IO) {
+                            dao.updateRawMessageLog(rawMsgId, currentLog)
+                        }
                     }
-                }
-            )
+                )
 
-            handleAnalysisResult(result, rawMsgId, sourceApp, dao)
-            
-            if (result.rawLog != null) {
-                 dao.updateRawMessageLog(rawMsgId, result.rawLog)
+                handleAnalysisResult(result, rawMsgId, sourceApp, dao)
+                
+                if (result.rawLog != null) {
+                     dao.updateRawMessageLog(rawMsgId, result.rawLog)
+                }
+                dao.updateRawMessageStatus(rawMsgId, RawMessage.STATUS_SUCCESS)
+                
+            } catch (e: Exception) {
+                handleError(e, rawMsgId, dao)
             }
-            dao.updateRawMessageStatus(rawMsgId, RawMessage.STATUS_SUCCESS)
-            
-        } catch (e: Exception) {
-            handleError(e, rawMsgId, dao)
         }
     }
 

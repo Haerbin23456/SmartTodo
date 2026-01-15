@@ -10,14 +10,20 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Dns
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import com.example.smarttodo.ui.components.SmartOutlinedCard
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.smarttodo.data.RawMessage
 import org.json.JSONObject
@@ -31,32 +37,60 @@ fun RawStreamList(
     messages: List<RawMessage>,
     context: Context,
     onReprocess: (RawMessage) -> Unit,
+    onCancel: (Long) -> Unit,
+    onCancelAll: () -> Unit,
     modifier: Modifier = Modifier,
-    useLazyColumn: Boolean = true // Default true for infinite lists, set false for nested in ScrollView
+    useLazyColumn: Boolean = true
 ) {
-    if (messages.isEmpty()) {
-        Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("暂无信息流", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.outline)
-        }
-    } else if (useLazyColumn) {
-        LazyColumn(
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = modifier
-        ) {
-            items(messages, key = { it.id }) { msg ->
-                Box(modifier = Modifier.animateItem()) {
-                    RawMessageItem(msg, context, onReprocess)
+    Column(modifier = modifier) {
+        // Header with Cancel All
+        val hasProcessing = messages.any { it.status == RawMessage.STATUS_PROCESSING || it.status == RawMessage.STATUS_PENDING }
+        if (hasProcessing) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "队列处理中...",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                TextButton(
+                    onClick = onCancelAll,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Icon(Icons.Default.StopCircle, null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("停止全部")
                 }
             }
         }
-    } else {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = modifier
-        ) {
-            messages.forEach { msg ->
-                RawMessageItem(msg, context, onReprocess)
+
+        if (messages.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("暂无信息流", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.outline)
+            }
+        } else if (useLazyColumn) {
+            LazyColumn(
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                items(messages, key = { it.id }) { msg ->
+                    Box(modifier = Modifier.animateItem()) {
+                        RawMessageItem(msg, context, onReprocess, onCancel)
+                    }
+                }
+            }
+        } else {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(16.dp)
+            ) {
+                messages.forEach { msg ->
+                    RawMessageItem(msg, context, onReprocess, onCancel)
+                }
             }
         }
     }
@@ -66,93 +100,147 @@ fun RawStreamList(
 fun RawMessageItem(
     msg: RawMessage,
     context: Context,
-    onReprocess: (RawMessage) -> Unit
+    onReprocess: (RawMessage) -> Unit,
+    onCancel: (Long) -> Unit
 ) {
     val dateFormat = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
     val timeStr = dateFormat.format(Date(msg.timestamp))
     var showLogDialog by remember { mutableStateOf(false) }
 
+    // Parse result summary from aiLog if possible
+    val resultSummary = remember(msg.aiLog, msg.status) {
+        if (msg.status == RawMessage.STATUS_SUCCESS && msg.aiLog != null) {
+            try {
+                val json = JSONObject(msg.aiLog)
+                val action = json.optString("action", "")
+                val taskData = json.optJSONObject("taskData")
+                val title = taskData?.optString("title", "")
+                when (action) {
+                    "CREATE" -> "✨ 新建: $title"
+                    "MERGE" -> "🔄 合并: $title"
+                    "IGNORE" -> "🔇 已忽略"
+                    else -> null
+                }
+            } catch (e: Exception) { null }
+        } else null
+    }
+
     SmartOutlinedCard(
-            onClick = { showLogDialog = true },
-            isError = msg.status == RawMessage.STATUS_FAILED,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        onClick = { showLogDialog = true },
+        isError = msg.status == RawMessage.STATUS_FAILED,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            // Top Row: App Info & Status/Time
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                    val appIcon = if (msg.status == RawMessage.STATUS_FAILED) Icons.Default.History else Icons.Default.Notifications
                     Icon(
-                        Icons.Default.Notifications,
+                        appIcon,
                         contentDescription = null,
                         modifier = Modifier.size(14.dp),
-                        tint = if (msg.status == RawMessage.STATUS_FAILED) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                        tint = when(msg.status) {
+                            RawMessage.STATUS_FAILED -> MaterialTheme.colorScheme.error
+                            RawMessage.STATUS_SUCCESS -> MaterialTheme.colorScheme.primary
+                            else -> MaterialTheme.colorScheme.outline
+                        }
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         msg.sourceApp.substringAfterLast('.').uppercase(),
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (msg.status == RawMessage.STATUS_FAILED) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary,
+                        color = MaterialTheme.colorScheme.secondary,
                         fontWeight = FontWeight.ExtraBold,
-                        modifier = Modifier.clickable {
-                            val launchIntent = context.packageManager.getLaunchIntentForPackage(msg.sourceApp)
-                            launchIntent?.let { context.startActivity(it) }
-                        }
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
                 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (msg.status == RawMessage.STATUS_PROCESSING) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(12.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                    } else if (msg.status == RawMessage.STATUS_FAILED) {
-                        Text(
-                            "分析失败",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                    }
                     Text(
                         timeStr,
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.outline
                     )
+                    if (msg.status == RawMessage.STATUS_PROCESSING || msg.status == RawMessage.STATUS_PENDING) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        IconButton(
+                            onClick = { onCancel(msg.id) },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Close, 
+                                contentDescription = "Cancel",
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
                 }
             }
             
             Spacer(modifier = Modifier.height(8.dp))
             
+            // Content
             Text(
                 msg.content,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
             )
 
+            // Result Summary or Progress
             if (msg.status == RawMessage.STATUS_PROCESSING) {
                 Spacer(modifier = Modifier.height(12.dp))
                 LinearProgressIndicator(
-                    modifier = Modifier.fillMaxWidth().height(2.dp),
+                    modifier = Modifier.fillMaxWidth().height(3.dp),
                     color = MaterialTheme.colorScheme.primary,
-                    trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                    trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                    strokeCap = StrokeCap.Round
                 )
-            }
-            
-            if (msg.status == RawMessage.STATUS_FAILED) {
+            } else if (resultSummary != null) {
                 Spacer(modifier = Modifier.height(8.dp))
-                TextButton(
-                    onClick = { onReprocess(msg) },
-                    modifier = Modifier.align(Alignment.End),
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                Surface(
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                    shape = RoundedCornerShape(4.dp)
                 ) {
-                    Text("重试分析")
+                    Text(
+                        resultSummary,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
                 }
+            } else if (msg.status == RawMessage.STATUS_FAILED) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "分析失败",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    TextButton(
+                        onClick = { onReprocess(msg) },
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                        modifier = Modifier.height(28.dp),
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Text("重试", style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+            } else if (msg.status == RawMessage.STATUS_CANCELLED) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "已取消",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
             }
         }
     }

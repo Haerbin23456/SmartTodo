@@ -19,5 +19,6 @@ data class RawMessage(
         const val STATUS_PROCESSING = "PROCESSING"
         const val STATUS_SUCCESS = "SUCCESS"
         const val STATUS_FAILED = "FAILED"
+        const val STATUS_CANCELLED = "CANCELLED"
     }
 }

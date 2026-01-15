@@ -104,9 +104,12 @@ fun MainScreen(
                     onDelete = { task -> viewModel.deleteTask(task) }
                 )
                 else -> RawStreamList(
-                    messages = rawMessages, 
+                    messages = rawMessages,
                     context = context,
-                    onReprocess = { msg -> viewModel.processNewInput(msg.content, msg.sourceApp, msg.id) }
+                    onReprocess = { msg -> viewModel.processNewInput(msg.content, msg.sourceApp, msg.id) },
+                    onCancel = { id -> viewModel.cancelMessage(id) },
+                    onCancelAll = { viewModel.cancelAllMessages() },
+                    modifier = Modifier.fillMaxSize()
                 )
             }
         }

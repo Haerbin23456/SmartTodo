@@ -42,6 +42,15 @@ interface TodoDao {
     @Query("UPDATE raw_messages SET status = :status WHERE id = :msgId")
     suspend fun updateRawMessageStatus(msgId: Long, status: String)
 
+    @Query("UPDATE raw_messages SET status = 'FAILED', aiLog = 'Interrupted by app restart' WHERE status = 'PROCESSING'")
+    suspend fun resetStuckMessages()
+
+    @Query("UPDATE raw_messages SET status = 'CANCELLED', aiLog = 'User cancelled' WHERE id = :msgId AND status IN ('PENDING', 'PROCESSING')")
+    suspend fun cancelMessage(msgId: Long)
+
+    @Query("UPDATE raw_messages SET status = 'CANCELLED', aiLog = 'User cancelled all' WHERE status IN ('PENDING', 'PROCESSING')")
+    suspend fun cancelAllMessages()
+
     @Query("SELECT * FROM smart_tasks")
     suspend fun getAllTasksSync(): List<SmartTask>
 

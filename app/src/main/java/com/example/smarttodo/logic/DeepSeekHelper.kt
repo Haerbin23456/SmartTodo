@@ -29,7 +29,11 @@ data class SmartTaskData(
 )
 
 object DeepSeekHelper {
-    private val client = OkHttpClient()
+    private val client = OkHttpClient.Builder()
+        .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+        .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+        .writeTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+        .build()
     
     suspend fun analyzeContent(
         newContent: String,
