@@ -31,6 +31,7 @@ class TaskProcessorTest {
                 summary = "AI Summary",
                 notes = "AI Notes",
                 scheduledTime = null,
+                subtasks = emptyList(),
                 completeness = SmartTask.COMPLETENESS_COMPLETE
             )
         )
@@ -60,6 +61,7 @@ class TaskProcessorTest {
                 summary = "New Info",
                 notes = "Updated Notes",
                 scheduledTime = null,
+                subtasks = emptyList(),
                 completeness = SmartTask.COMPLETENESS_COMPLETE
             )
         )
@@ -73,5 +75,56 @@ class TaskProcessorTest {
 
         // Assert
         coVerify { dao.updateTaskAndMarkProcessed(match { it.id == 123L && it.summary.contains("New Info") }, 1L) }
+    }
+
+    @Test
+    fun `processContent should IGNORE when AI returns ACTION_IGNORE`() = runTest {
+        val content = "Ok thanks"
+        val aiResult = AIAnalysisResult(action = Constants.ACTION_IGNORE)
+        
+        coEvery { DeepSeekHelper.analyzeContent(any(), any(), any(), any(), any(), any()) } returns aiResult
+        coEvery { dao.insertRawMessage(any()) } returns 1L
+
+        TaskProcessor.processContent(content, "TestApp", dao, apiKey = "key", scope = this)
+
+        coVerify { dao.markRawMessageProcessed(1L, null) }
+        coVerify(exactly = 0) { dao.insertTaskAndMarkProcessed(any(), any()) }
+    }
+
+    @Test
+    fun `processContent should intercept and ignore garbage error content`() = runTest {
+        val content = "Some content"
+        val aiResult = AIAnalysisResult(
+            action = Constants.ACTION_CREATE,
+            taskData = SmartTaskData(
+                title = "Error Log",
+                summary = "Streaming Error: connection abort",
+                notes = null,
+                scheduledTime = null,
+                subtasks = emptyList(),
+                completeness = SmartTask.COMPLETENESS_MISSING_INFO
+            )
+        )
+        
+        coEvery { DeepSeekHelper.analyzeContent(any(), any(), any(), any(), any(), any()) } returns aiResult
+        coEvery { dao.insertRawMessage(any()) } returns 1L
+
+        TaskProcessor.processContent(content, "TestApp", dao, apiKey = "key", scope = this)
+
+        // Should NOT create task, but mark processed with null
+        coVerify { dao.markRawMessageProcessed(1L, null) }
+        coVerify(exactly = 0) { dao.insertTaskAndMarkProcessed(any(), any()) }
+    }
+
+    @Test
+    fun `processContent should handle AI timeout or exception gracefully`() = runTest {
+        val content = "Normal content"
+        coEvery { DeepSeekHelper.analyzeContent(any(), any(), any(), any(), any(), any()) } throws Exception("Network Timeout")
+        coEvery { dao.insertRawMessage(any()) } returns 1L
+
+        TaskProcessor.processContent(content, "TestApp", dao, apiKey = "key", scope = this)
+
+        // Verify status updated to FAILED
+        coVerify { dao.updateRawMessageStatus(1L, "FAILED") }
     }
 }
