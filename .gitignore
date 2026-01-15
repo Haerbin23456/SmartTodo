@@ -21,3 +21,8 @@
 /app/build/
 /app/release/
 /htmlReport/
+
+# Signing
+*.jks
+*.keystore
+keystore_base64.txt
