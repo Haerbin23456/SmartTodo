@@ -124,10 +124,23 @@ fun TaskDetailScreen(
         topBar = {
             LargeTopAppBar(
                 title = {
-                    Text(
-                        title.ifBlank { "任务详情" },
+                    TextField(
+                        value = title,
+                        onValueChange = { title = it },
+                        placeholder = { Text("任务标题") },
+                        textStyle = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        ),
                         maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            cursorColor = MaterialTheme.colorScheme.primary
+                        ),
+                        modifier = Modifier.fillMaxWidth()
                     )
                 },
                 navigationIcon = {
@@ -190,40 +203,14 @@ fun TaskDetailScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // --- Title Edit ---
-                item {
-                    OutlinedCard(
-                        colors = CardDefaults.outlinedCardColors(containerColor = Color.Transparent),
-                        border = SmartTodoCardDefaults.cardBorder(),
-                        shape = SmartTodoCardDefaults.CardShape,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        TextField(
-                            value = title,
-                            onValueChange = { title = it },
-                            placeholder = { Text("任务标题") },
-                            modifier = Modifier.fillMaxWidth(),
-                            textStyle = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                            colors = TextFieldDefaults.colors(
-                                focusedContainerColor = Color.Transparent,
-                                unfocusedContainerColor = Color.Transparent,
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent
-                            )
-                        )
-                    }
-                }
-
                 // --- Notes & Time ---
                 item {
                     SectionHeader("详细信息", Icons.Default.Info)
-                    ElevatedCard(
+                    OutlinedCard(
                         modifier = Modifier.fillMaxWidth(),
                         shape = SmartTodoCardDefaults.CardShape,
-                        colors = CardDefaults.elevatedCardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        ),
-                        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+                        colors = SmartTodoCardDefaults.outlinedCardColors(),
+                        border = SmartTodoCardDefaults.cardBorder()
                     ) {
                         Column(Modifier.padding(16.dp)) {
                             Row(
@@ -321,6 +308,7 @@ fun TaskDetailScreen(
                     OutlinedCard(
                         modifier = Modifier.fillMaxWidth(),
                         shape = SmartTodoCardDefaults.CardShape,
+                        colors = SmartTodoCardDefaults.outlinedCardColors(),
                         border = SmartTodoCardDefaults.cardBorder()
                     ) {
                         Column(modifier = Modifier.padding(8.dp)) {
@@ -372,6 +360,7 @@ fun TaskDetailScreen(
                     OutlinedCard(
                         modifier = Modifier.fillMaxWidth(),
                         shape = SmartTodoCardDefaults.CardShape,
+                        colors = SmartTodoCardDefaults.outlinedCardColors(),
                         border = SmartTodoCardDefaults.cardBorder()
                     ) {
                         MarkdownText(
