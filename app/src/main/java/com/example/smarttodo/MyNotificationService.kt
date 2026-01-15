@@ -11,6 +11,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 import com.example.smarttodo.util.Constants
+import com.example.smarttodo.util.NotificationActionManager
 
 class MyNotificationService : NotificationListenerService() {
     private var lastContent = ""
@@ -61,6 +62,12 @@ class MyNotificationService : NotificationListenerService() {
         val apiKey = sharedPrefs.getString(Constants.PREF_KEY_API_KEY, "")?.trim() ?: ""
         val baseUrl = sharedPrefs.getString(Constants.PREF_KEY_API_BASE_URL, Constants.DEFAULT_API_BASE_URL) ?: Constants.DEFAULT_API_BASE_URL
 
+        // Store the content intent for later use
+        val notificationKey = sbn.key
+        sbn.notification.contentIntent?.let {
+            NotificationActionManager.storeAction(notificationKey, it)
+        }
+
         // Use TaskProcessor to handle DB & AI
         serviceScope.launch {
             val db = AppDatabase.getDatabase(applicationContext)
@@ -70,6 +77,7 @@ class MyNotificationService : NotificationListenerService() {
                 dao = db.todoDao(),
                 apiKey = apiKey,
                 baseUrl = baseUrl,
+                notificationKey = notificationKey,
                 scope = serviceScope
             )
         }

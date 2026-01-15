@@ -106,6 +106,7 @@ class SmartTodoViewModel(application: Application) : AndroidViewModel(applicatio
                         baseUrl = _apiBaseUrl.value,
                         customPrompt = _customPrompt.value,
                         silenceTimeoutSec = _silenceTimeout.value,
+                        notificationKey = null,
                         scope = viewModelScope
                     )
                 } catch (e: Exception) {

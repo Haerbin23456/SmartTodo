@@ -44,7 +44,7 @@ class Converters {
     }
 }
 
-@Database(entities = [RawMessage::class, SmartTask::class], version = 6, exportSchema = false)
+@Database(entities = [RawMessage::class, SmartTask::class], version = 7, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun todoDao(): TodoDao

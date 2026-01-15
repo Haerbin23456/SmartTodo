@@ -15,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.text.font.FontFamily
 import com.example.smarttodo.data.RawMessage
+import com.example.smarttodo.util.NotificationActionManager
 import org.json.JSONObject
 
 @Composable
@@ -108,8 +109,14 @@ fun LogDetailDialog(
         dismissButton = {
             Row {
                 TextButton(onClick = {
-                    val launchIntent = context.packageManager.getLaunchIntentForPackage(msg.sourceApp)
-                    launchIntent?.let { context.startActivity(it) }
+                    val fired = msg.notificationKey?.let { 
+                        NotificationActionManager.fireAction(it)
+                    } ?: false
+                    
+                    if (!fired) {
+                        val launchIntent = context.packageManager.getLaunchIntentForPackage(msg.sourceApp)
+                        launchIntent?.let { context.startActivity(it) }
+                    }
                 }) {
                     Text("打开应用")
                 }

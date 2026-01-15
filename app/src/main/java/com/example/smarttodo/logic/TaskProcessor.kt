@@ -40,6 +40,7 @@ object TaskProcessor {
         baseUrl: String = Constants.DEFAULT_API_BASE_URL,
         customPrompt: String? = null,
         silenceTimeoutSec: Int = Constants.DEFAULT_SILENCE_TIMEOUT_SEC,
+        notificationKey: String? = null,
         scope: CoroutineScope
     ) {
         val locale = java.util.Locale.getDefault()
@@ -50,7 +51,8 @@ object TaskProcessor {
                 RawMessage(
                     content = content,
                     sourceApp = sourceApp,
-                    timestamp = TimeUtils.now()
+                    timestamp = TimeUtils.now(),
+                    notificationKey = notificationKey
                 )
             )
 
@@ -121,11 +123,10 @@ object TaskProcessor {
                 return@let
             }
 
-            val timeStamp = TimeUtils.formatToLog()
             dao.insertTaskAndMarkProcessed(
                 SmartTask(
                     title = data.title,
-                    summary = "[$timeStamp] Created from: $sourceApp\n${data.summary}",
+                    summary = data.summary,
                     notes = data.notes ?: "",
                     scheduledTime = data.scheduledTime,
                     subtasks = data.subtasks.map { SubTaskItem(content = it) },
@@ -143,12 +144,9 @@ object TaskProcessor {
         val data = result.taskData ?: return
         val existingTask = dao.getTaskById(targetId) ?: return
         
-        val timeStamp = TimeUtils.formatToLog()
-        
         // 1. Smart Summary (History) Append
-        val newLogEntry = if (data.summary.isNotBlank()) "\n[$timeStamp] ${data.summary}" else ""
-        val updatedSummary = if (!existingTask.summary.contains(data.summary)) {
-            existingTask.summary + newLogEntry
+        val updatedSummary = if (data.summary.isNotBlank() && !existingTask.summary.contains(data.summary)) {
+            if (existingTask.summary.isBlank()) data.summary else "${existingTask.summary}\n${data.summary}"
         } else {
             existingTask.summary
         }

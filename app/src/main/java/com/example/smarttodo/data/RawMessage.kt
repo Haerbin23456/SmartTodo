@@ -12,7 +12,8 @@ data class RawMessage(
     val isProcessed: Boolean = false,
     val status: String = STATUS_PENDING, // PENDING, PROCESSING, SUCCESS, FAILED
     val relatedTaskId: Long? = null,
-    val aiLog: String? = null
+    val aiLog: String? = null,
+    val notificationKey: String? = null
 ) {
     companion object {
         const val STATUS_PENDING = "PENDING"

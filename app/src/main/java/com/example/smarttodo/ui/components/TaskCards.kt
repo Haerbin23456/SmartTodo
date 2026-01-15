@@ -86,15 +86,15 @@ fun SmartTaskCard(
                 }
             }
             
-            // Notes
+            // Notes Preview
             if (!task.notes.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                MarkdownText(
-                    markdown = task.notes,
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        color = MaterialTheme.colorScheme.outline
-                    ),
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    task.notes,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline,
                     maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(start = 36.dp)
                 )
             }
@@ -140,18 +140,6 @@ fun SmartTaskCard(
                     }
                 }
             }
-            
-            if (task.summary.isNotBlank()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    task.summary, 
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(start = 36.dp)
-                )
-            }
         }
     }
 }
@@ -181,12 +169,12 @@ fun InboxCard(
                         color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                     Spacer(modifier = Modifier.height(4.dp))
-                    MarkdownText(
-                        markdown = task.notes ?: "", 
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
-                        ),
+                    Text(
+                        task.notes ?: "", 
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f),
                         maxLines = 3,
+                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
