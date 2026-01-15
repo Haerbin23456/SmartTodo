@@ -63,6 +63,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
+    implementation(libs.compose.markdown)
     implementation(libs.okhttp)
     implementation(libs.json)
     implementation(libs.androidx.room.runtime)

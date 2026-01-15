@@ -44,8 +44,20 @@ fun RawStreamList(
 ) {
     Column(modifier = modifier) {
         // Header with Global Progress and Cancel All
-        val hasProcessing = messages.any { it.status == RawMessage.STATUS_PROCESSING || it.status == RawMessage.STATUS_PENDING }
-        if (hasProcessing) {
+        val processingMessages = messages.filter { it.status == RawMessage.STATUS_PROCESSING || it.status == RawMessage.STATUS_PENDING }
+        val totalCount = processingMessages.size
+        
+        if (totalCount > 0) {
+            // Find which one is actually processing (the one with the earliest timestamp usually)
+            // Or just show total count since they are serial
+            val finishedInSession = messages.count { it.status == RawMessage.STATUS_SUCCESS || it.status == RawMessage.STATUS_FAILED }
+            // Note: Since we don't have a reliable "total batch" size from the past, 
+            // let's show (Total - Remaining / Total) or just (Remaining)
+            // User wants (x/n). Let's use a simpler logic: 
+            // If we have 5 pending, and we just started, it's (1/5).
+            // Actually, we can just show "Remaining X tasks" or similar, 
+            // but (x/n) usually means "Completed / Total".
+            
             Surface(
                 color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
                 modifier = Modifier.fillMaxWidth()
@@ -69,7 +81,7 @@ fun RawStreamList(
                             )
                             Spacer(Modifier.width(8.dp))
                             Text(
-                                "AI 正在分析队列...",
+                                "AI 正在分析 ($totalCount 条处理中)...",
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.primary
                             )

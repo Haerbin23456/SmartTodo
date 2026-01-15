@@ -31,6 +31,7 @@ import com.example.smarttodo.data.SmartTask
 import com.example.smarttodo.data.SubTaskItem
 import com.example.smarttodo.ui.components.SmartOutlinedCard
 import com.example.smarttodo.ui.components.LogDetailDialog
+import dev.jeziellago.compose.markdowntext.MarkdownText
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -52,6 +53,7 @@ fun TaskDetailScreen(
     var notes by remember { mutableStateOf("") }
     var scheduledTime by remember { mutableStateOf("") }
     val subtasks = remember { mutableStateListOf<SubTaskItem>() }
+    var isEditingNotes by remember { mutableStateOf(false) }
 
     // Date/Time Picker State
     var showDatePicker by remember { mutableStateOf(false) }
@@ -216,21 +218,57 @@ fun TaskDetailScreen(
                         shape = RoundedCornerShape(24.dp)
                     ) {
                         Column(Modifier.padding(16.dp)) {
-                            Text("备注内容", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("备注内容", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                                IconButton(onClick = { isEditingNotes = !isEditingNotes }, modifier = Modifier.size(24.dp)) {
+                                    Icon(
+                                        if (isEditingNotes) Icons.Default.Visibility else Icons.Default.Edit,
+                                        contentDescription = if (isEditingNotes) "预览" else "编辑",
+                                        modifier = Modifier.size(16.dp),
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
                             Spacer(Modifier.height(8.dp))
-                            TextField(
-                                value = notes,
-                                onValueChange = { notes = it },
-                                placeholder = { Text("补充更多细节...") },
-                                modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp),
-                                colors = TextFieldDefaults.colors(
-                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                                    focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent
-                                ),
-                                shape = RoundedCornerShape(16.dp)
-                            )
+                            if (isEditingNotes) {
+                                TextField(
+                                    value = notes,
+                                    onValueChange = { notes = it },
+                                    placeholder = { Text("补充更多细节...") },
+                                    modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp),
+                                    colors = TextFieldDefaults.colors(
+                                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                        focusedIndicatorColor = Color.Transparent,
+                                        unfocusedIndicatorColor = Color.Transparent
+                                    ),
+                                    shape = RoundedCornerShape(16.dp)
+                                )
+                            } else {
+                                Surface(
+                                    onClick = { isEditingNotes = true },
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                    shape = RoundedCornerShape(16.dp),
+                                    modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp)
+                                ) {
+                                    Box(modifier = Modifier.padding(12.dp)) {
+                                        if (notes.isBlank()) {
+                                            Text("补充更多细节...", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+                                        } else {
+                                            MarkdownText(
+                                                markdown = notes,
+                                                style = MaterialTheme.typography.bodyMedium.copy(
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                             Spacer(Modifier.height(20.dp))
                             Text("提醒时间", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                             Spacer(Modifier.height(8.dp))
