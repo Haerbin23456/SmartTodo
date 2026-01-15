@@ -42,6 +42,7 @@ object DeepSeekHelper {
         existingTasks: List<SmartTask>,
         apiKey: String,
         baseUrl: String = Constants.DEFAULT_API_BASE_URL,
+        customPrompt: String? = null,
         language: String = "Chinese",
         onProgress: (String) -> Unit = {}
     ): AIAnalysisResult = kotlinx.coroutines.withTimeout(30000) { // 30 seconds timeout
@@ -59,7 +60,7 @@ object DeepSeekHelper {
 
         val currentDateTime = TimeUtils.getCurrentTimeForPrompt()
 
-        val systemPrompt = PromptProvider.getSystemPrompt(existingTasks, language, currentDateTime)
+        val systemPrompt = PromptProvider.getSystemPrompt(existingTasks, language, currentDateTime, customPrompt)
 
         val messages = JSONArray()
         messages.put(JSONObject().put("role", "system").put("content", systemPrompt))

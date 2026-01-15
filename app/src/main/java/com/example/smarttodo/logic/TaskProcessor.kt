@@ -38,6 +38,7 @@ object TaskProcessor {
         existingRawId: Long? = null,
         apiKey: String,
         baseUrl: String = Constants.DEFAULT_API_BASE_URL,
+        customPrompt: String? = null,
         scope: CoroutineScope
     ) {
         val locale = java.util.Locale.getDefault()
@@ -70,6 +71,7 @@ object TaskProcessor {
                     existingTasks = allContextTasks,
                     apiKey = apiKey,
                     baseUrl = baseUrl,
+                    customPrompt = customPrompt,
                     language = language,
                     onProgress = { currentLog ->
                         scope.launch(Dispatchers.IO) {

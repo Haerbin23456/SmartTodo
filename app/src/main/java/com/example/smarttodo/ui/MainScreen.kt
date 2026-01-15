@@ -34,6 +34,7 @@ fun MainScreen(
     val isProcessing by viewModel.isProcessing.collectAsState()
     val apiKey by viewModel.apiKey.collectAsState()
     val apiBaseUrl by viewModel.apiBaseUrl.collectAsState()
+    val customPrompt by viewModel.customPrompt.collectAsState()
 
     var showManualInput by remember { mutableStateOf(false) }
     var showAppDialog by remember { mutableStateOf(false) }
@@ -126,14 +127,18 @@ fun MainScreen(
     }
 
     if (showSettingsDialog) {
-        SettingsDialog(
-            onDismiss = { showSettingsDialog = false },
-            onSave = { key, url -> viewModel.saveApiConfig(key, url) },
-            initialApiKey = apiKey,
-            initialBaseUrl = apiBaseUrl,
-            context = context
-        )
-    }
+            SettingsDialog(
+                onDismiss = { showSettingsDialog = false },
+                onSave = { key, url, prompt -> 
+                    viewModel.saveApiConfig(key, url)
+                    viewModel.saveCustomPrompt(prompt)
+                },
+                initialApiKey = apiKey,
+                initialBaseUrl = apiBaseUrl,
+                initialPrompt = customPrompt,
+                context = context
+            )
+        }
 }
 
 @Composable

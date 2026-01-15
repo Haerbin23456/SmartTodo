@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -78,14 +79,58 @@ fun getInstalledApps(context: Context): List<AppInfo> {
 @Composable
 fun SettingsDialog(
     onDismiss: () -> Unit,
-    onSave: (String, String) -> Unit,
+    onSave: (String, String, String?) -> Unit,
     initialApiKey: String,
     initialBaseUrl: String,
+    initialPrompt: String?,
     context: Context
 ) {
     var apiKey by remember { mutableStateOf(initialApiKey) }
     var baseUrl by remember { mutableStateOf(initialBaseUrl) }
+    var prompt by remember { mutableStateOf(initialPrompt ?: PromptProvider.getDefaultPrompt()) }
     var showPassword by remember { mutableStateOf(false) }
+    var showPromptEditor by remember { mutableStateOf(false) }
+
+    if (showPromptEditor) {
+        AlertDialog(
+            onDismissRequest = { showPromptEditor = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            title = { 
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("编辑 AI 系统提示词")
+                    TextButton(onClick = { prompt = PromptProvider.getDefaultPrompt() }) {
+                        Text("恢复默认")
+                    }
+                }
+            },
+            text = {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    Text(
+                        "可用变量: \$currentTime, \$language, \$contextJson",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = prompt,
+                        onValueChange = { prompt = it },
+                        modifier = Modifier.fillMaxSize(),
+                        textStyle = MaterialTheme.typography.bodySmall
+                    )
+                }
+            },
+            confirmButton = {
+                Button(onClick = { showPromptEditor = false }) {
+                    Text("确定")
+                }
+            }
+        )
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -122,6 +167,18 @@ fun SettingsDialog(
 
                 HorizontalDivider()
 
+                // Prompt Editor Link
+                TextButton(
+                    onClick = { showPromptEditor = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Edit, null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("自定义 AI 系统提示词 (Prompt)")
+                }
+
+                HorizontalDivider()
+
                 // System Settings Link
                 TextButton(
                     onClick = {
@@ -137,7 +194,8 @@ fun SettingsDialog(
         },
         confirmButton = {
             Button(onClick = {
-                onSave(apiKey, baseUrl)
+                val finalPrompt = if (prompt == PromptProvider.getDefaultPrompt()) null else prompt
+                onSave(apiKey, baseUrl, finalPrompt)
                 onDismiss()
             }) {
                 Text("保存")

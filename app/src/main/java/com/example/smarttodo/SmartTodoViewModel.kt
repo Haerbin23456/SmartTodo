@@ -40,6 +40,9 @@ class SmartTodoViewModel(application: Application) : AndroidViewModel(applicatio
     private val _apiBaseUrl = MutableStateFlow(sharedPrefs.getString(Constants.PREF_KEY_API_BASE_URL, Constants.DEFAULT_API_BASE_URL) ?: Constants.DEFAULT_API_BASE_URL)
     val apiBaseUrl = _apiBaseUrl.asStateFlow()
 
+    private val _customPrompt = MutableStateFlow(sharedPrefs.getString(Constants.PREF_KEY_CUSTOM_PROMPT, null))
+    val customPrompt = _customPrompt.asStateFlow()
+
     private val processingJobs = ConcurrentHashMap<Long, Job>()
 
     init {
@@ -63,6 +66,13 @@ class SmartTodoViewModel(application: Application) : AndroidViewModel(applicatio
         _apiBaseUrl.value = url
     }
 
+    fun saveCustomPrompt(prompt: String?) {
+        sharedPrefs.edit()
+            .putString(Constants.PREF_KEY_CUSTOM_PROMPT, prompt)
+            .apply()
+        _customPrompt.value = prompt
+    }
+
     fun processNewInput(content: String, sourceApp: String, existingRawId: Long? = null) {
         // We need a stable ID to track the job. If existingRawId is null, we'll get it from processContent.
         // But we want to track it immediately. Let's pre-insert if needed.
@@ -84,6 +94,7 @@ class SmartTodoViewModel(application: Application) : AndroidViewModel(applicatio
                         existingRawId = rawMsgId,
                         apiKey = _apiKey.value,
                         baseUrl = _apiBaseUrl.value,
+                        customPrompt = _customPrompt.value,
                         scope = viewModelScope
                     )
                 } catch (e: Exception) {

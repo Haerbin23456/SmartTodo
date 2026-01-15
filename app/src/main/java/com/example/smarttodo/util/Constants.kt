@@ -9,6 +9,7 @@ object Constants {
     const val PREFS_NAME = "SmartTodoPrefs"
     const val PREF_KEY_API_KEY = "api_key"
     const val PREF_KEY_API_BASE_URL = "api_base_url"
+    const val PREF_KEY_CUSTOM_PROMPT = "custom_prompt"
     
     // AI Actions
     const val ACTION_CREATE = "CREATE"
