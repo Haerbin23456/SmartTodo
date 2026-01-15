@@ -15,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.text.font.FontFamily
 import com.example.smarttodo.data.RawMessage
+import dev.jeziellago.compose.markdowntext.MarkdownText
 import org.json.JSONObject
 
 @Composable
@@ -34,9 +35,11 @@ fun LogDetailDialog(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
                     modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
                 ) {
-                    Text(
-                        msg.content,
-                        style = MaterialTheme.typography.bodySmall,
+                    MarkdownText(
+                        markdown = msg.content,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = MaterialTheme.colorScheme.onSurface
+                        ),
                         modifier = Modifier.padding(8.dp)
                     )
                 }

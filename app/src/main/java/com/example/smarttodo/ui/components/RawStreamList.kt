@@ -26,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.smarttodo.data.RawMessage
+import dev.jeziellago.compose.markdowntext.MarkdownText
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -220,12 +221,13 @@ fun RawMessageItem(
             Spacer(modifier = Modifier.height(8.dp))
             
             // Content
-            Text(
-                msg.content,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            MarkdownText(
+                markdown = msg.content,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                ),
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+                modifier = Modifier.fillMaxWidth()
             )
 
             // Result Summary or Progress

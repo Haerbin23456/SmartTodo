@@ -16,6 +16,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.smarttodo.data.SmartTask
+import dev.jeziellago.compose.markdowntext.MarkdownText
 
 @Composable
 fun SmartTaskCard(
@@ -88,12 +89,12 @@ fun SmartTaskCard(
             // Notes
             if (!task.notes.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    task.notes,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline,
+                MarkdownText(
+                    markdown = task.notes,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = MaterialTheme.colorScheme.outline
+                    ),
                     maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(start = 36.dp)
                 )
             }
@@ -180,12 +181,13 @@ fun InboxCard(
                         color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        task.notes ?: "", 
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f),
+                    MarkdownText(
+                        markdown = task.notes ?: "", 
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                        ),
                         maxLines = 3,
-                        overflow = TextOverflow.Ellipsis
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }

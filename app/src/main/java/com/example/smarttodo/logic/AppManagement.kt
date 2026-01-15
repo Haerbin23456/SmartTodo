@@ -21,6 +21,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.edit
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 val COMMON_APPS = setOf(
     "com.tencent.mm",       // 微信
@@ -47,11 +49,8 @@ fun getInstalledApps(context: Context): List<AppInfo> {
 
     // 检查是否是第一次运行
     val isFirstRun = !sharedPrefs.contains("HAS_INIT_DEFAULTS")
-    if (isFirstRun) {
-        sharedPrefs.edit { putBoolean("HAS_INIT_DEFAULTS", true) }
-    }
-
-    return packages.mapNotNull { p ->
+    
+    val result = packages.mapNotNull { p ->
         p.applicationInfo?.let { appInfo ->
             val isSystem = (appInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0
             val packageName = p.packageName
@@ -59,10 +58,6 @@ fun getInstalledApps(context: Context): List<AppInfo> {
             // 默认勾选逻辑：如果是第一次运行且在常用列表里，则勾选
             val isDefaultCommon = isFirstRun && COMMON_APPS.contains(packageName)
             val isSelected = sharedPrefs.getBoolean(packageName, isDefaultCommon)
-
-            if (isDefaultCommon) {
-                sharedPrefs.edit { putBoolean(packageName, true) }
-            }
 
             AppInfo(
                 name = appInfo.loadLabel(pm).toString(),
@@ -72,7 +67,19 @@ fun getInstalledApps(context: Context): List<AppInfo> {
                 icon = null // 为了性能，图标可以按需加载
             )
         }
-    }.sortedByDescending { it.isSelected } // 已勾选的排在前面
+    }.sortedByDescending { it.isSelected }
+
+    // 统一处理第一次运行的默认值持久化，减少循环内的 edit 开启次数
+    if (isFirstRun) {
+        sharedPrefs.edit {
+            putBoolean("HAS_INIT_DEFAULTS", true)
+            result.filter { it.isSelected }.forEach {
+                putBoolean(it.packageName, true)
+            }
+        }
+    }
+
+    return result
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -241,7 +248,17 @@ fun AppManagementDialog(
     context: Context
 ) {
     // 1. 原始数据状态
-    var allApps by remember { mutableStateOf(getInstalledApps(context)) }
+    var allApps by remember { mutableStateOf<List<AppInfo>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    // 异步加载应用列表
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) {
+            val apps = getInstalledApps(context)
+            allApps = apps
+            isLoading = false
+        }
+    }
 
     // 2. 搜索和筛选状态
     var searchQuery by remember { mutableStateOf("") }
@@ -275,21 +292,31 @@ fun AppManagementDialog(
         title = {
             Column {
                 Text("应用监听管理", style = MaterialTheme.typography.headlineSmall)
-                // 搜索栏
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    placeholder = { Text("搜索应用名或包名...") },
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    leadingIcon = { Icon(Icons.Default.Search, null) },
-                    singleLine = true
-                )
+                if (!isLoading) {
+                    // 搜索栏
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = { Text("搜索应用名或包名...") },
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        leadingIcon = { Icon(Icons.Default.Search, null) },
+                        singleLine = true
+                    )
+                }
             }
         },
         text = {
-            Column {
-                // 第一行：按状态筛选 (已选/未选)
+            if (isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(200.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                Column {
+                    // 第一行：按状态筛选 (已选/未选)
                 Text(
                     "状态筛选",
                     style = MaterialTheme.typography.labelMedium,
@@ -376,8 +403,10 @@ fun AppManagementDialog(
                         }
                     }
                 }
+                }
             }
-        }    )
+        }
+    )
 }
 
 @Composable

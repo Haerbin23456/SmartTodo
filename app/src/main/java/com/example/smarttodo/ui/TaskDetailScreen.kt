@@ -340,7 +340,13 @@ fun TaskDetailScreen(
                         shape = RoundedCornerShape(24.dp),
                         border = CardDefaults.outlinedCardBorder().copy(width = 0.5.dp)
                     ) {
-                        Text(summary, Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
+                        MarkdownText(
+                            markdown = summary,
+                            modifier = Modifier.padding(16.dp),
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        )
                     }
                 }
 
