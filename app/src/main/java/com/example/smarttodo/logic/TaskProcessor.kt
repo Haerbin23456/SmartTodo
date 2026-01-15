@@ -19,6 +19,18 @@ import kotlinx.coroutines.sync.withLock
 object TaskProcessor {
     private val globalMutex = Mutex()
 
+    /**
+     * 处理新消息内容的核心逻辑。
+     * 
+     * 待优化：上下文链式识别 (Context Chaining)
+     * 目前系统通过传入最近的 [activeTasks] 和 [draftTasks] 作为 AI 上下文，
+     * 已经具备基本的“合并到已有任务”的能力。
+     * 
+     * 未来改进方向：
+     * 1. 短时记忆：记录最近 5-10 分钟内的原始消息序列，即使没有创建任务的消息也作为上下文。
+     * 2. 意图补全：当收到类似“下午9点”这种碎片化消息时，AI 应优先检索最近处理的任务进行补充，
+     *    而不是直接忽略或创建新任务。
+     */
     suspend fun processContent(
         content: String,
         sourceApp: String,

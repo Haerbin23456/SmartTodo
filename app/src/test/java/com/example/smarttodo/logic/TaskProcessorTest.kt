@@ -4,6 +4,7 @@ import com.example.smarttodo.data.SmartTask
 import com.example.smarttodo.data.TodoDao
 import com.example.smarttodo.util.Constants
 import io.mockk.*
+import android.util.Log
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -14,6 +15,16 @@ class TaskProcessorTest {
     
     @Before
     fun setup() {
+        clearAllMocks()
+        mockkStatic(Log::class)
+        every { Log.d(any<String>(), any<String>()) } returns 0
+        every { Log.e(any<String>(), any<String>()) } returns 0
+        every { Log.e(any<String>(), any<String>(), any<Throwable>()) } returns 0
+        every { Log.i(any<String>(), any<String>()) } returns 0
+        every { Log.w(any<String>(), any<String>()) } returns 0
+        every { Log.v(any<String>(), any<String>()) } returns 0
+        every { Log.isLoggable(any<String>(), any<Int>()) } returns false
+
         mockkObject(DeepSeekHelper)
         every { dao.getActiveTasks() } returns flowOf(emptyList())
         every { dao.getDraftTasks() } returns flowOf(emptyList())
@@ -126,5 +137,17 @@ class TaskProcessorTest {
 
         // Verify status updated to FAILED
         coVerify { dao.updateRawMessageStatus(1L, "FAILED") }
+    }
+
+    @Test
+    fun `processContent should handle empty content gracefully`() = runTest {
+        val content = "   "
+        coEvery { dao.insertRawMessage(any()) } returns 1L
+
+        TaskProcessor.processContent(content, "TestApp", dao, apiKey = "key", scope = this)
+
+        // It should still process it, but AI might ignore it. 
+        // We just ensure it doesn't crash.
+        coVerify { dao.insertRawMessage(any()) }
     }
 }
