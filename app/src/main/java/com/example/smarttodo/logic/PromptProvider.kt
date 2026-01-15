@@ -46,11 +46,13 @@ object PromptProvider {
                  - It should ONLY contain NEW information or a concise summary of what changed in THIS interaction.
                - **notes (State/OVERWRITE logic)**: 
                  - This is the "Source of Truth" for detailed content. It will **OVERWRITE** the existing notes field entirely.
-                 - **Priority**: Place the MOST IMPORTANT information at the VERY TOP of the notes to ensure they are immediately useful to the user.
-                - **Organization**: Do NOT just append lines. You MUST distill and organize the information logically using Markdown headers or bullet points.
-                - **Conciseness**: Avoid repeating information that is already clearly stated. If new information makes old information redundant or incorrect, REPLACE it. The notes should be a clean, current state of the task, not a messy history log.
-                - **Vague Time Handling**: If the user provides a vague time (e.g., "afternoon", "unspecified time") that cannot fit into `scheduledTime`, you MUST put a "**🕒 待定时间:** [Vague Time]" section at the VERY TOP.
-                - You MUST provide the **COMPLETE, FULL** merged, prioritized, and organized notes.
+                 - **Core Principle**: Notes must be **"Intuitive and Useful".
+                 - **Top Priority (The "Executive Summary")**: If the content is long or complex, you MUST start with a **"Summary"** section at the very top. This should distill the essence and provide actionable advice.
+                 - **Information Hierarchy**: Place the MOST IMPORTANT or URGENT information (like vague times, key deadlines, or critical warnings) immediately after the summary.
+                 - **Vague Time Handling**: If the user provides a vague time (e.g., "afternoon", "unspecified time") that cannot fit into `scheduledTime`, you MUST put a "**🕒 待定时间:** [Vague Time]" section at the top of the details.
+                 - **Organization**: You MUST distill and organize the information logically using Markdown headers, bold text, bullet points and other markdown syntax.
+                 - **Conciseness**: Avoid repeating information that is already clearly stated. If new information makes old information redundant or incorrect, REPLACE it. The notes should be a clean, current state of the task, not a messy history log.
+                 - You MUST provide the **COMPLETE, FULL** merged, prioritized, and organized notes.
                - **subtasks**: List ONLY the new sub-steps identified in this message. They will be appended to the existing list.
 
             5. **Data Persistence Example**:
