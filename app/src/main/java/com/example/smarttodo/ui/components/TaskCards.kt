@@ -18,6 +18,9 @@ import androidx.compose.ui.unit.dp
 import com.example.smarttodo.data.SmartTask
 import dev.jeziellago.compose.markdowntext.MarkdownText
 
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+
 @Composable
 fun SmartTaskCard(
     task: SmartTask,
@@ -25,6 +28,7 @@ fun SmartTaskCard(
     onToggleComplete: () -> Unit,
     onDelete: () -> Unit
 ) {
+    val haptic = LocalHapticFeedback.current
     OutlinedCard(
         modifier = Modifier.fillMaxWidth(),
         shape = SmartTodoCardDefaults.CardShape,
@@ -46,7 +50,10 @@ fun SmartTaskCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 // M3 Style Custom Checkbox/Radio-like Circle
                 IconButton(
-                    onClick = onToggleComplete,
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onToggleComplete()
+                    },
                     modifier = Modifier.size(24.dp)
                 ) {
                     Icon(
@@ -76,7 +83,10 @@ fun SmartTaskCard(
                     )
                 }
                 
-                IconButton(onClick = onDelete) {
+                IconButton(onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onDelete()
+                }) {
                     Icon(
                         Icons.Default.DeleteOutline,
                         contentDescription = "Delete",
@@ -151,6 +161,7 @@ fun InboxCard(
     onConfirm: () -> Unit,
     onDelete: () -> Unit
 ) {
+    val haptic = LocalHapticFeedback.current
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = SmartTodoCardDefaults.CardShape,
@@ -182,14 +193,20 @@ fun InboxCard(
             Spacer(modifier = Modifier.height(16.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 TextButton(
-                    onClick = onDelete,
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onDelete()
+                    },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
                     Text("忽略")
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Button(
-                    onClick = onConfirm,
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onConfirm()
+                    },
                     shape = SmartTodoCardDefaults.InnerShape,
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {

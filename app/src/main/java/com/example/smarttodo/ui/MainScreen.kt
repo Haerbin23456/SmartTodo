@@ -9,8 +9,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.smarttodo.R
@@ -30,6 +33,7 @@ fun MainScreen(
     
     // UI State
     var selectedTab by remember { mutableIntStateOf(0) } // 0 = Tasks, 1 = Inbox, 2 = Stream
+
     val activeTasks by viewModel.activeTasks.collectAsState()
     val draftTasks by viewModel.draftTasks.collectAsState()
     val rawMessages by viewModel.messageStream.collectAsState()
@@ -58,7 +62,11 @@ fun MainScreen(
                             style = if (scrollBehavior.state.collapsedFraction > 0.5f) 
                                 MaterialTheme.typography.titleLarge 
                             else 
-                                MaterialTheme.typography.headlineMedium
+                                MaterialTheme.typography.headlineLarge,
+                            fontWeight = if (scrollBehavior.state.collapsedFraction > 0.5f)
+                                FontWeight.Medium
+                            else
+                                FontWeight.ExtraBold
                         ) 
                     },
                     actions = {
@@ -164,16 +172,23 @@ fun MainNavigationBar(
     onTabSelected: (Int) -> Unit,
     badgeCount: Int
 ) {
+    val haptic = LocalHapticFeedback.current
     NavigationBar {
         NavigationBarItem(
             selected = selectedTab == 0,
-            onClick = { onTabSelected(0) },
+            onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onTabSelected(0)
+            },
             icon = { Icon(Icons.Default.CheckCircle, null) },
             label = { Text(stringResource(R.string.tab_tasks)) }
         )
         NavigationBarItem(
             selected = selectedTab == 1,
-            onClick = { onTabSelected(1) },
+            onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onTabSelected(1)
+            },
             icon = { 
                 BadgedBox(
                     badge = {
@@ -189,7 +204,10 @@ fun MainNavigationBar(
         )
         NavigationBarItem(
             selected = selectedTab == 2,
-            onClick = { onTabSelected(2) },
+            onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onTabSelected(2)
+            },
             icon = { Icon(Icons.Default.Dns, null) },
             label = { Text(stringResource(R.string.tab_stream)) }
         )
