@@ -305,7 +305,11 @@ fun AppManagementDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier.fillMaxSize().padding(vertical = 40.dp),
         properties = DialogProperties(usePlatformDefaultWidth = false), // 全屏感
-        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_confirm)) } },
+        confirmButton = { 
+            if (!isLoading) {
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_confirm)) }
+            }
+        },
         title = {
             Column {
                 Text(stringResource(R.string.title_app_management), style = MaterialTheme.typography.headlineSmall)
@@ -324,12 +328,10 @@ fun AppManagementDialog(
             }
         },
         text = {
-            if (isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxWidth().fillMaxHeight(0.6f),
-                    contentAlignment = Alignment.Center
-                ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                if (isLoading) {
                     Column(
+                        modifier = Modifier.align(Alignment.Center),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
@@ -366,96 +368,96 @@ fun AppManagementDialog(
                             modifier = Modifier.padding(horizontal = 32.dp)
                         )
                     }
-                }
-            } else {
-                Column {
-                    // 第一行：按状态筛选 (已选/未选)
-                Text(
-                    stringResource(R.string.label_filter_status),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(bottom = 4.dp)
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    listOf(filterAll, filterSelected, filterUnselected).forEach { tag ->
-                        FilterChip(
-                            selected = filterMode == tag,
-                            onClick = { filterMode = tag },
-                            label = { Text(tag) }
+                } else {
+                    Column {
+                        // 第一行：按状态筛选 (已选/未选)
+                        Text(
+                            stringResource(R.string.label_filter_status),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(bottom = 4.dp)
                         )
-                    }
-                }
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            listOf(filterAll, filterSelected, filterUnselected).forEach { tag ->
+                                FilterChip(
+                                    selected = filterMode == tag,
+                                    onClick = { filterMode = tag },
+                                    label = { Text(tag) }
+                                )
+                            }
+                        }
 
-                // 第二行：按类型筛选 (第三方/系统)
-                Text(
-                    stringResource(R.string.label_filter_type),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(bottom = 4.dp)
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    listOf(filterAll, filterThirdParty, filterSystem).forEach { tag ->
-                        FilterChip(
-                            selected = typeMode == tag,
-                            onClick = { typeMode = tag },
-                            label = { Text(tag) }
+                        // 第二行：按类型筛选 (第三方/系统)
+                        Text(
+                            stringResource(R.string.label_filter_type),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(bottom = 4.dp)
                         )
-                    }
-                }
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            listOf(filterAll, filterThirdParty, filterSystem).forEach { tag ->
+                                FilterChip(
+                                    selected = typeMode == tag,
+                                    onClick = { typeMode = tag },
+                                    label = { Text(tag) }
+                                )
+                            }
+                        }
 
-                // 全选/反选 + 统计信息
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        stringResource(R.string.format_app_count, filteredApps.size),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                    Row {
-                        TextButton(onClick = {
-                            allApps = allApps.map { app ->
-                                // 逻辑：只全选当前筛选结果中的内容
-                                val isSelected = if (filteredApps.any { it.packageName == app.packageName }) true else app.isSelected
-                                if (isSelected) {
+                        // 全选/反选 + 统计信息
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                stringResource(R.string.format_app_count, filteredApps.size),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                            Row {
+                                TextButton(onClick = {
+                                    allApps = allApps.map { app ->
+                                        // 逻辑：只全选当前筛选结果中的内容
+                                        val isSelected = if (filteredApps.any { it.packageName == app.packageName }) true else app.isSelected
+                                        if (isSelected) {
+                                            context.getSharedPreferences("SmartTodoPrefs", Context.MODE_PRIVATE)
+                                                .edit { putBoolean(app.packageName, true) }
+                                        }
+                                        app.copy(isSelected = isSelected)
+                                    }
+                                }) { Text(stringResource(R.string.action_select_current)) }
+
+                                TextButton(onClick = {
+                                    allApps = allApps.map { app ->
+                                        val isSelected = if (filteredApps.any { it.packageName == app.packageName }) false else app.isSelected
+                                        context.getSharedPreferences("SmartTodoPrefs", Context.MODE_PRIVATE)
+                                            .edit { putBoolean(app.packageName, isSelected) }
+                                        app.copy(isSelected = isSelected)
+                                    }
+                                }) { Text(stringResource(R.string.action_reset_current)) }
+                            }
+                        }
+
+                        // 应用列表
+                        LazyColumn(modifier = Modifier.weight(1f)) {
+                            items(filteredApps, key = { it.packageName }) { app ->
+                                AppListItem(app) { checked ->
+                                    allApps = allApps.map {
+                                        if (it.packageName == app.packageName) it.copy(isSelected = checked) else it
+                                    }
                                     context.getSharedPreferences("SmartTodoPrefs", Context.MODE_PRIVATE)
-                                        .edit { putBoolean(app.packageName, true) }
+                                        .edit { putBoolean(app.packageName, checked) }
                                 }
-                                app.copy(isSelected = isSelected)
                             }
-                        }) { Text(stringResource(R.string.action_select_current)) }
-
-                        TextButton(onClick = {
-                            allApps = allApps.map { app ->
-                                val isSelected = if (filteredApps.any { it.packageName == app.packageName }) false else app.isSelected
-                                context.getSharedPreferences("SmartTodoPrefs", Context.MODE_PRIVATE)
-                                    .edit { putBoolean(app.packageName, isSelected) }
-                                app.copy(isSelected = isSelected)
-                            }
-                        }) { Text(stringResource(R.string.action_reset_current)) }
-                    }
-                }
-
-                // 应用列表
-                LazyColumn(modifier = Modifier.weight(1f)) {
-                    items(filteredApps, key = { it.packageName }) { app ->
-                        AppListItem(app) { checked ->
-                            allApps = allApps.map {
-                                if (it.packageName == app.packageName) it.copy(isSelected = checked) else it
-                            }
-                            context.getSharedPreferences("SmartTodoPrefs", Context.MODE_PRIVATE)
-                                .edit { putBoolean(app.packageName, checked) }
                         }
                     }
-                }
                 }
             }
         }
