@@ -27,6 +27,5 @@
 *.keystore
 keystore_base64.txt
 COURSE_DESIGN_GUIDE.txt
-.gitignore
 repomix-output.md
 OPTIMIZATION_PLAN.md
