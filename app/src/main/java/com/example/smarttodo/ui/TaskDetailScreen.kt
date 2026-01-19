@@ -97,10 +97,10 @@ fun TaskDetailScreen(
                 TextButton(onClick = {
                     showDatePicker = false
                     showTimePicker = true
-                }) { Text("下一步") }
+                }) { Text(stringResource(R.string.action_next)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("取消") }
+                TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.action_cancel)) }
             }
         ) { DatePicker(state = datePickerState) }
     }
@@ -120,10 +120,10 @@ fun TaskDetailScreen(
                         val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
                         scheduledTime = formatter.format(calendar.time)
                     }
-                }) { Text("确定") }
+                }) { Text(stringResource(R.string.action_confirm)) }
             },
             dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) { Text("取消") }
+                TextButton(onClick = { showTimePicker = false }) { Text(stringResource(R.string.action_cancel)) }
             },
             text = { TimePicker(state = timePickerState) }
         )
@@ -208,7 +208,7 @@ fun TaskDetailScreen(
         if (isLoading) {
             Box(Modifier.fillMaxSize().padding(padding), Alignment.Center) { CircularProgressIndicator() }
         } else if (task == null) {
-            Box(Modifier.fillMaxSize().padding(padding), Alignment.Center) { Text("任务不存在") }
+            Box(Modifier.fillMaxSize().padding(padding), Alignment.Center) { Text(stringResource(R.string.error_task_not_found)) }
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(padding),
@@ -307,7 +307,7 @@ fun TaskDetailScreen(
                                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Icon(Icons.Default.AccessTime, null, tint = MaterialTheme.colorScheme.primary)
                                     Spacer(Modifier.width(12.dp))
-                                    Text(scheduledTime.ifBlank { "未设置" }, Modifier.weight(1f))
+                                    Text(scheduledTime.ifBlank { stringResource(R.string.label_not_set) }, Modifier.weight(1f))
                                     if (scheduledTime.isNotBlank()) {
                                         IconButton(onClick = { scheduledTime = "" }, Modifier.size(24.dp)) {
                                             Icon(Icons.Default.Clear, null, Modifier.size(16.dp))

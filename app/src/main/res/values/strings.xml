@@ -47,4 +47,57 @@
     <string name="label_custom_prompt">自定义 Prompt</string>
     <string name="label_silence_timeout">AI 响应超时 (秒)</string>
     <string name="error_api_key_missing">API Key 缺失，请在设置中配置</string>
+
+    <!-- App Management -->
+    <string name="title_app_management">应用监听管理</string>
+    <string name="loading_apps">正在扫描应用列表...</string>
+    <string name="loading_apps_desc">扫描已安装应用以配置监听范围</string>
+    <string name="hint_search_apps">搜索应用名或包名...</string>
+    <string name="label_filter_status">状态筛选</string>
+    <string name="label_filter_type">类型筛选</string>
+    <string name="filter_all">全部</string>
+    <string name="filter_selected">已选</string>
+    <string name="filter_unselected">未选</string>
+    <string name="filter_third_party">第三方</string>
+    <string name="filter_system">系统</string>
+    <string name="format_app_count">显示 %1$d 个应用</string>
+    <string name="action_select_current">全选当前</string>
+    <string name="action_reset_current">重置当前</string>
+    
+    <!-- Settings Dialog -->
+    <string name="title_edit_prompt">编辑 AI 系统提示词</string>
+    <string name="action_restore_default">恢复默认</string>
+    <string name="label_available_vars">可用变量: $currentTime, $language, $contextJson</string>
+    <string name="label_silence_auto_disconnect">输出停滞自动断开</string>
+    <string name="desc_silence_timeout">当 AI 超过该时间没有新字输出时，将自动停止并保存当前结果。</string>
+    <string name="action_custom_prompt">自定义 AI 系统提示词 (Prompt)</string>
+    <string name="action_open_notification_settings">打开系统通知权限设置</string>
+    
+    <!-- Dialogs & Other UI -->
+    <string name="title_ai_log">AI 处理日志</string>
+    <string name="label_raw_content">原始内容:</string>
+    <string name="label_processing_log">处理日志:</string>
+    <string name="status_waiting_ai">等待 AI 响应...</string>
+    <string name="error_parse_log">解析错误</string>
+    <string name="action_reprocess_log">重新解析</string>
+    <string name="action_open_app">打开应用</string>
+    <string name="action_close">关闭</string>
+    
+    <string name="title_add_todo">添加待办</string>
+    <string name="hint_manual_input">粘贴文本或输入...</string>
+    <string name="action_paste_clipboard">粘贴剪贴板</string>
+    <string name="action_generate_todo">生成待办</string>
+    
+    <!-- Status -->
+    <string name="status_cancelled">已取消</string>
+    <string name="status_processing_ai">AI 正在分析 (%1$d 条处理中)...</string>
+    <string name="status_failed">分析失败</string>
+    <string name="action_retry">重试</string>
+    <string name="action_next">下一步</string>
+    <string name="error_task_not_found">任务不存在</string>
+    <string name="label_not_set">未设置</string>
+    <string name="format_extracted_time">提取时间: %1$s</string>
+    <string name="format_ai_create">✨ 新建: %1$s</string>
+    <string name="format_ai_merge">🔄 合并: %1$s</string>
+    <string name="status_ai_ignore">🔇 已忽略</string>
 </resources>

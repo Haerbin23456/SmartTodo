@@ -73,7 +73,7 @@ fun RawStreamList(
                             )
                             Spacer(Modifier.width(8.dp))
                             Text(
-                                "AI 正在分析 ($totalCount 条处理中)...",
+                                stringResource(R.string.status_processing_ai, totalCount),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.primary
                             )
@@ -143,9 +143,9 @@ fun RawMessageItem(
                 val taskData = json.optJSONObject("taskData")
                 val title = taskData?.optString("title", "")
                 when (action) {
-                    "CREATE" -> "✨ 新建: $title"
-                    "MERGE" -> "🔄 合并: $title"
-                    "IGNORE" -> "🔇 已忽略"
+                    "CREATE" -> context.getString(R.string.format_ai_create, title)
+                    "MERGE" -> context.getString(R.string.format_ai_merge, title)
+                    "IGNORE" -> context.getString(R.string.status_ai_ignore)
                     else -> null
                 }
             } catch (e: Exception) { null }
@@ -246,7 +246,7 @@ fun RawMessageItem(
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        "分析失败",
+                        stringResource(R.string.status_failed),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.error
                     )
@@ -257,13 +257,13 @@ fun RawMessageItem(
                         modifier = Modifier.height(28.dp),
                         colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)
                     ) {
-                        Text("重试", style = MaterialTheme.typography.labelSmall)
+                        Text(stringResource(R.string.action_retry), style = MaterialTheme.typography.labelSmall)
                     }
                 }
             } else if (msg.status == RawMessage.STATUS_CANCELLED) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    "已取消",
+                    stringResource(R.string.status_cancelled),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.outline
                 )

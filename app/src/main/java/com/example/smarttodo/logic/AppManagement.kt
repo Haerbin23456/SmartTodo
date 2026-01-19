@@ -17,8 +17,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.example.smarttodo.R
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.edit
 import kotlinx.coroutines.Dispatchers
@@ -111,16 +116,16 @@ fun SettingsDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("编辑 AI 系统提示词")
+                    Text(stringResource(R.string.title_edit_prompt))
                     TextButton(onClick = { prompt = PromptProvider.getDefaultPrompt() }) {
-                        Text("恢复默认")
+                        Text(stringResource(R.string.action_restore_default))
                     }
                 }
             },
             text = {
                 Column(modifier = Modifier.fillMaxSize()) {
                     Text(
-                        "可用变量: \$currentTime, \$language, \$contextJson",
+                        stringResource(R.string.label_available_vars),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -135,7 +140,7 @@ fun SettingsDialog(
             },
             confirmButton = {
                 Button(onClick = { showPromptEditor = false }) {
-                    Text("确定")
+                    Text(stringResource(R.string.action_confirm))
                 }
             }
         )
@@ -143,7 +148,7 @@ fun SettingsDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("设置") },
+        title = { Text(stringResource(R.string.title_settings)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 // API Key Input
@@ -181,7 +186,7 @@ fun SettingsDialog(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("输出停滞自动断开", style = MaterialTheme.typography.labelLarge)
+                        Text(stringResource(R.string.label_silence_auto_disconnect), style = MaterialTheme.typography.labelLarge)
                         Text("${silenceTimeout}秒", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
                     }
                     Slider(
@@ -191,7 +196,7 @@ fun SettingsDialog(
                         steps = 11 // 5, 10, 15, ..., 60
                     )
                     Text(
-                        "当 AI 超过该时间没有新字输出时，将自动停止并保存当前结果。",
+                        stringResource(R.string.desc_silence_timeout),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                     )
@@ -206,7 +211,7 @@ fun SettingsDialog(
                 ) {
                     Icon(Icons.Default.Edit, null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("自定义 AI 系统提示词 (Prompt)")
+                    Text(stringResource(R.string.action_custom_prompt))
                 }
 
                 HorizontalDivider()
@@ -220,7 +225,7 @@ fun SettingsDialog(
                 ) {
                     Icon(Icons.Default.Settings, null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("打开系统通知权限设置")
+                    Text(stringResource(R.string.action_open_notification_settings))
                 }
             }
         },
@@ -230,12 +235,12 @@ fun SettingsDialog(
                 onSave(apiKey, baseUrl, finalPrompt, silenceTimeout)
                 onDismiss()
             }) {
-                Text("保存")
+                Text(stringResource(R.string.action_save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("取消")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )
@@ -262,22 +267,34 @@ fun AppManagementDialog(
 
     // 2. 搜索和筛选状态
     var searchQuery by remember { mutableStateOf("") }
-    var filterMode by remember { mutableStateOf("全部") } // 全部 / 已选 / 未选
-    var typeMode by remember { mutableStateOf("全部") }   // 全部 / 第三方 / 系统
+    val filterAll = stringResource(R.string.filter_all)
+    val filterSelected = stringResource(R.string.filter_selected)
+    val filterUnselected = stringResource(R.string.filter_unselected)
+    val filterThirdParty = stringResource(R.string.filter_third_party)
+    val filterSystem = stringResource(R.string.filter_system)
 
-    // 3. 计算过滤后的列表 (这是 2026 年流畅 UI 的核心)
-    val filteredApps = remember(allApps, searchQuery, filterMode, typeMode) {
+    var filterMode by remember { mutableStateOf("") } // 延迟初始化
+    var typeMode by remember { mutableStateOf("") }   // 延迟初始化
+
+    // 确保状态初始化为正确的资源字符串
+    LaunchedEffect(filterAll) {
+        if (filterMode.isEmpty()) filterMode = filterAll
+        if (typeMode.isEmpty()) typeMode = filterAll
+    }
+
+    // 3. 计算过滤后的列表
+    val filteredApps = remember(allApps, searchQuery, filterMode, typeMode, filterSelected, filterUnselected, filterThirdParty, filterSystem) {
         allApps.filter { app ->
             val matchSearch = app.name.contains(searchQuery, ignoreCase = true) ||
                              app.packageName.contains(searchQuery, ignoreCase = true)
             val matchFilter = when (filterMode) {
-                "已选" -> app.isSelected
-                "未选" -> !app.isSelected
+                filterSelected -> app.isSelected
+                filterUnselected -> !app.isSelected
                 else -> true
             }
             val matchType = when (typeMode) {
-                "第三方" -> !app.isSystem
-                "系统" -> app.isSystem
+                filterThirdParty -> !app.isSystem
+                filterSystem -> app.isSystem
                 else -> true
             }
             matchSearch && matchFilter && matchType
@@ -288,16 +305,16 @@ fun AppManagementDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier.fillMaxSize().padding(vertical = 40.dp),
         properties = DialogProperties(usePlatformDefaultWidth = false), // 全屏感
-        confirmButton = { TextButton(onClick = onDismiss) { Text("完成") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_confirm)) } },
         title = {
             Column {
-                Text("应用监听管理", style = MaterialTheme.typography.headlineSmall)
+                Text(stringResource(R.string.title_app_management), style = MaterialTheme.typography.headlineSmall)
                 if (!isLoading) {
                     // 搜索栏
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        placeholder = { Text("搜索应用名或包名...") },
+                        placeholder = { Text(stringResource(R.string.hint_search_apps)) },
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                         shape = RoundedCornerShape(12.dp),
                         leadingIcon = { Icon(Icons.Default.Search, null) },
@@ -309,16 +326,52 @@ fun AppManagementDialog(
         text = {
             if (isLoading) {
                 Box(
-                    modifier = Modifier.fillMaxWidth().height(200.dp),
+                    modifier = Modifier.fillMaxWidth().fillMaxHeight(0.6f),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator()
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        // 优化的加载指示器
+                        Box(contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(64.dp),
+                                strokeWidth = 4.dp,
+                                strokeCap = StrokeCap.Round,
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                progress = { 1f }
+                            )
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(64.dp),
+                                strokeWidth = 4.dp,
+                                strokeCap = StrokeCap.Round,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.height(32.dp))
+                        
+                        Text(
+                            stringResource(R.string.loading_apps),
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            stringResource(R.string.loading_apps_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 32.dp)
+                        )
+                    }
                 }
             } else {
                 Column {
                     // 第一行：按状态筛选 (已选/未选)
                 Text(
-                    "状态筛选",
+                    stringResource(R.string.label_filter_status),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(bottom = 4.dp)
@@ -327,7 +380,7 @@ fun AppManagementDialog(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    listOf("全部", "已选", "未选").forEach { tag ->
+                    listOf(filterAll, filterSelected, filterUnselected).forEach { tag ->
                         FilterChip(
                             selected = filterMode == tag,
                             onClick = { filterMode = tag },
@@ -338,7 +391,7 @@ fun AppManagementDialog(
 
                 // 第二行：按类型筛选 (第三方/系统)
                 Text(
-                    "类型筛选",
+                    stringResource(R.string.label_filter_type),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(bottom = 4.dp)
@@ -347,7 +400,7 @@ fun AppManagementDialog(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    listOf("全部", "第三方", "系统").forEach { tag ->
+                    listOf(filterAll, filterThirdParty, filterSystem).forEach { tag ->
                         FilterChip(
                             selected = typeMode == tag,
                             onClick = { typeMode = tag },
@@ -363,7 +416,7 @@ fun AppManagementDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        "显示 ${filteredApps.size} 个应用",
+                        stringResource(R.string.format_app_count, filteredApps.size),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.outline
                     )
@@ -378,7 +431,7 @@ fun AppManagementDialog(
                                 }
                                 app.copy(isSelected = isSelected)
                             }
-                        }) { Text("全选当前") }
+                        }) { Text(stringResource(R.string.action_select_current)) }
 
                         TextButton(onClick = {
                             allApps = allApps.map { app ->
@@ -387,7 +440,7 @@ fun AppManagementDialog(
                                     .edit { putBoolean(app.packageName, isSelected) }
                                 app.copy(isSelected = isSelected)
                             }
-                        }) { Text("重置当前") }
+                        }) { Text(stringResource(R.string.action_reset_current)) }
                     }
                 }
 

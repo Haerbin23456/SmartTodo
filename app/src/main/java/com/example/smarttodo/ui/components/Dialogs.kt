@@ -14,6 +14,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.res.stringResource
+import com.example.smarttodo.R
 import com.example.smarttodo.data.RawMessage
 import com.example.smarttodo.util.NotificationActionManager
 import org.json.JSONObject
@@ -27,10 +29,10 @@ fun LogDetailDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("AI 处理日志") },
+        title = { Text(stringResource(R.string.title_ai_log)) },
         text = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                Text("原始内容:", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                Text(stringResource(R.string.label_raw_content), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
                 Card(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
                     modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
@@ -46,7 +48,7 @@ fun LogDetailDialog(
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Text("处理日志:", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                Text(stringResource(R.string.label_processing_log), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
                 Card(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
                     modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
@@ -68,7 +70,7 @@ fun LogDetailDialog(
                                                 val taskData = taskObj.optJSONObject("taskData")
                                                 if (taskData != null && taskData.has("scheduledTime")) {
                                                     val time = taskData.getString("scheduledTime")
-                                                    "提取时间: $time" to false
+                                                    context.getString(R.string.format_extracted_time, time) to false
                                                 } else {
                                                     JSONObject(content).toString(2) to false
                                                 }
@@ -84,8 +86,8 @@ fun LogDetailDialog(
                                 } else {
                                     log to (msg.status == RawMessage.STATUS_FAILED)
                                 }
-                            } else "等待 AI 响应..." to false
-                        } catch (e: Exception) { (msg.aiLog ?: "解析错误") to true }
+                            } else context.getString(R.string.status_waiting_ai) to false
+                        } catch (e: Exception) { (msg.aiLog ?: context.getString(R.string.error_parse_log)) to true }
                     }
                     
                     Text(
@@ -103,7 +105,7 @@ fun LogDetailDialog(
                 onReprocess(msg)
                 onDismiss()
             }) {
-                Text("重新解析")
+                Text(stringResource(R.string.action_reprocess_log))
             }
         },
         dismissButton = {
@@ -118,10 +120,10 @@ fun LogDetailDialog(
                         launchIntent?.let { context.startActivity(it) }
                     }
                 }) {
-                    Text("打开应用")
+                    Text(stringResource(R.string.action_open_app))
                 }
                 TextButton(onClick = onDismiss) {
-                    Text("关闭")
+                    Text(stringResource(R.string.action_close))
                 }
             }
         }
@@ -137,14 +139,14 @@ fun ManualInputDialog(
     var text by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("添加待办") },
+        title = { Text(stringResource(R.string.title_add_todo)) },
         text = {
             Column {
                 OutlinedTextField(
                     value = text,
                     onValueChange = { text = it },
                     modifier = Modifier.fillMaxWidth().height(150.dp),
-                    placeholder = { Text("粘贴文本或输入...") }
+                    placeholder = { Text(stringResource(R.string.hint_manual_input)) }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 FilledTonalButton(
@@ -161,17 +163,17 @@ fun ManualInputDialog(
                 ) {
                     Icon(Icons.Default.ContentPaste, null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("粘贴剪贴板")
+                    Text(stringResource(R.string.action_paste_clipboard))
                 }
             }
         },
         confirmButton = {
             TextButton(onClick = { if (text.isNotBlank()) onConfirm(text) }) {
-                Text("生成待办")
+                Text(stringResource(R.string.action_generate_todo))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("取消") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         }
     )
 }
