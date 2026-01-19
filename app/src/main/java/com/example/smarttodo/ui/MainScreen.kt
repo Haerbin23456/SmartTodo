@@ -49,11 +49,17 @@ fun MainScreen(
             Column {
                 LargeTopAppBar(
                     title = { 
-                        Text(when(selectedTab) {
-                            0 -> stringResource(R.string.title_tasks)
-                            1 -> stringResource(R.string.title_inbox)
-                            else -> stringResource(R.string.title_stream)
-                        }) 
+                        Text(
+                            when(selectedTab) {
+                                0 -> stringResource(R.string.title_tasks)
+                                1 -> stringResource(R.string.title_inbox)
+                                else -> stringResource(R.string.title_stream)
+                            },
+                            style = if (scrollBehavior.state.collapsedFraction > 0.5f) 
+                                MaterialTheme.typography.titleLarge 
+                            else 
+                                MaterialTheme.typography.headlineMedium
+                        ) 
                     },
                     actions = {
                         IconButton(onClick = { showAppDialog = true }) {
@@ -63,7 +69,13 @@ fun MainScreen(
                             Icon(Icons.Default.Settings, contentDescription = "Settings")
                         }
                     },
-                    scrollBehavior = scrollBehavior
+                    scrollBehavior = scrollBehavior,
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        scrolledContainerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                        actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 )
             }
         },
