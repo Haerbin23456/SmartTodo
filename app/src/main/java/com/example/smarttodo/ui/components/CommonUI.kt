@@ -15,8 +15,8 @@ import androidx.compose.ui.unit.dp
 import com.example.smarttodo.R
 
 object SmartTodoCardDefaults {
-    val OuterRadius = 24.dp
-    val InnerRadius = 16.dp
+    val OuterRadius = 16.dp
+    val InnerRadius = 12.dp
     
     val CardShape = RoundedCornerShape(OuterRadius)
     val InnerShape = RoundedCornerShape(InnerRadius)
@@ -32,10 +32,39 @@ object SmartTodoCardDefaults {
     )
     
     @Composable
+    fun elevatedCardColors() = CardDefaults.elevatedCardColors(
+        containerColor = MaterialTheme.colorScheme.surface,
+    )
+
+    @Composable
     fun cardBorder() = BorderStroke(
         width = 1.dp,
         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
     )
+}
+
+@Composable
+fun SmartElevatedCard(
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    if (onClick != null) {
+        ElevatedCard(
+            onClick = onClick,
+            modifier = modifier,
+            shape = SmartTodoCardDefaults.CardShape,
+            colors = SmartTodoCardDefaults.elevatedCardColors(),
+            content = content
+        )
+    } else {
+        ElevatedCard(
+            modifier = modifier,
+            shape = SmartTodoCardDefaults.CardShape,
+            colors = SmartTodoCardDefaults.elevatedCardColors(),
+            content = content
+        )
+    }
 }
 
 @Composable
