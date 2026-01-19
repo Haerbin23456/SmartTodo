@@ -22,6 +22,9 @@ import com.example.smarttodo.logic.AppManagementDialog
 import com.example.smarttodo.logic.SettingsDialog
 import com.example.smarttodo.ui.components.*
 
+import androidx.compose.ui.unit.lerp
+import androidx.compose.ui.unit.sp
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
@@ -31,6 +34,17 @@ fun MainScreen(
     val context = LocalContext.current
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     
+    // Smooth title animation calculations
+    val collapsedFraction = scrollBehavior.state.collapsedFraction
+    
+    // Lerp font size between 32.sp (headlineLarge approx) and 20.sp (titleLarge approx)
+    val fontSize = lerp(30.sp, 20.sp, collapsedFraction)
+    
+    // Lerp weight between ExtraBold (800) and Medium (500)
+    val fontWeight = FontWeight(
+        (800 - (800 - 500) * collapsedFraction).toInt()
+    )
+
     // UI State
     var selectedTab by remember { mutableIntStateOf(0) } // 0 = Tasks, 1 = Inbox, 2 = Stream
 
@@ -59,14 +73,11 @@ fun MainScreen(
                                 1 -> stringResource(R.string.title_inbox)
                                 else -> stringResource(R.string.title_stream)
                             },
-                            style = if (scrollBehavior.state.collapsedFraction > 0.5f) 
-                                MaterialTheme.typography.titleLarge 
-                            else 
-                                MaterialTheme.typography.headlineLarge,
-                            fontWeight = if (scrollBehavior.state.collapsedFraction > 0.5f)
-                                FontWeight.Medium
-                            else
-                                FontWeight.ExtraBold
+                            style = MaterialTheme.typography.headlineLarge.copy(
+                                fontSize = fontSize,
+                                fontWeight = fontWeight,
+                                letterSpacing = lerp(0.sp, 0.15.sp, collapsedFraction)
+                            )
                         ) 
                     },
                     actions = {
