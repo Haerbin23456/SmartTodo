@@ -1,3 +1,50 @@
 <resources>
     <string name="app_name">SmartTodo</string>
+    
+    <!-- Navigation & Tabs -->
+    <string name="tab_tasks">待办</string>
+    <string name="tab_inbox">收件箱</string>
+    <string name="tab_stream">信息流</string>
+    <string name="title_tasks">我的待办</string>
+    <string name="title_inbox">收件箱</string>
+    <string name="title_stream">信息流</string>
+    <string name="title_detail">任务详情</string>
+    
+    <!-- Actions -->
+    <string name="action_add">添加步骤</string>
+    <string name="action_save">保存</string>
+    <string name="action_delete">删除</string>
+    <string name="action_cancel">取消</string>
+    <string name="action_confirm">确定</string>
+    <string name="action_ignore">忽略</string>
+    <string name="action_confirm_inbox">确认加入待办</string>
+    <string name="action_edit">编辑</string>
+    <string name="action_preview">预览</string>
+    <string name="action_reprocess">重新处理</string>
+    <string name="action_clear_all">清空全部</string>
+    
+    <!-- Empty States -->
+    <string name="empty_tasks">暂无待办事项，点击右下角添加一个吧</string>
+    <string name="empty_inbox">收件箱空空如也，AI 会在这里展示采集到的任务</string>
+    <string name="empty_stream">目前没有任何原始消息流</string>
+    
+    <!-- Task Detail -->
+    <string name="label_notes">备注内容</string>
+    <string name="label_reminder_time">提醒时间</string>
+    <string name="label_checklist">清单步骤</string>
+    <string name="label_ai_summary">AI 摘要</string>
+    <string name="label_evidence">信息来源</string>
+    <string name="hint_title">任务标题</string>
+    <string name="hint_notes">补充更多细节...</string>
+    <string name="hint_step">输入步骤...</string>
+    <string name="notes_expand">展开全文</string>
+    <string name="notes_collapse">收起</string>
+    
+    <!-- AI Config & Settings -->
+    <string name="title_settings">设置</string>
+    <string name="label_api_key">API Key</string>
+    <string name="label_api_base_url">API 基础地址</string>
+    <string name="label_custom_prompt">自定义 Prompt</string>
+    <string name="label_silence_timeout">AI 响应超时 (秒)</string>
+    <string name="error_api_key_missing">API Key 缺失，请在设置中配置</string>
 </resources>

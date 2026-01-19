@@ -20,6 +20,8 @@ import androidx.compose.runtime.*
 import com.example.smarttodo.ui.components.SmartOutlinedCard
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.example.smarttodo.R
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -48,16 +50,6 @@ fun RawStreamList(
         val totalCount = processingMessages.size
         
         if (totalCount > 0) {
-            // Find which one is actually processing (the one with the earliest timestamp usually)
-            // Or just show total count since they are serial
-            val finishedInSession = messages.count { it.status == RawMessage.STATUS_SUCCESS || it.status == RawMessage.STATUS_FAILED }
-            // Note: Since we don't have a reliable "total batch" size from the past, 
-            // let's show (Total - Remaining / Total) or just (Remaining)
-            // User wants (x/n). Let's use a simpler logic: 
-            // If we have 5 pending, and we just started, it's (1/5).
-            // Actually, we can just show "Remaining X tasks" or similar, 
-            // but (x/n) usually means "Completed / Total".
-            
             Surface(
                 color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
                 modifier = Modifier.fillMaxWidth()
@@ -94,7 +86,7 @@ fun RawStreamList(
                         ) {
                             Icon(Icons.Default.StopCircle, null, modifier = Modifier.size(14.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text("停止全部", style = MaterialTheme.typography.labelMedium)
+                            Text(stringResource(R.string.action_clear_all), style = MaterialTheme.typography.labelMedium)
                         }
                     }
                 }
@@ -102,9 +94,10 @@ fun RawStreamList(
         }
 
         if (messages.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("暂无信息流", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.outline)
-            }
+            EmptyStateView(
+                icon = Icons.Default.Dns,
+                message = stringResource(R.string.empty_stream)
+            )
         } else if (useLazyColumn) {
             LazyColumn(
                 contentPadding = PaddingValues(16.dp),
@@ -161,7 +154,6 @@ fun RawMessageItem(
 
     SmartOutlinedCard(
         onClick = { showLogDialog = true },
-        isError = msg.status == RawMessage.STATUS_FAILED,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(12.dp)) {

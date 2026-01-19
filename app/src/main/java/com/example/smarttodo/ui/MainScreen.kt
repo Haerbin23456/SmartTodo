@@ -11,7 +11,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.smarttodo.R
 import com.example.smarttodo.SmartTodoViewModel
 import com.example.smarttodo.logic.AppManagementDialog
 import com.example.smarttodo.logic.SettingsDialog
@@ -48,9 +50,9 @@ fun MainScreen(
                 LargeTopAppBar(
                     title = { 
                         Text(when(selectedTab) {
-                            0 -> "我的待办"
-                            1 -> "收件箱"
-                            else -> "信息流"
+                            0 -> stringResource(R.string.title_tasks)
+                            1 -> stringResource(R.string.title_inbox)
+                            else -> stringResource(R.string.title_stream)
                         }) 
                     },
                     actions = {
@@ -155,7 +157,7 @@ fun MainNavigationBar(
             selected = selectedTab == 0,
             onClick = { onTabSelected(0) },
             icon = { Icon(Icons.Default.CheckCircle, null) },
-            label = { Text("待办") }
+            label = { Text(stringResource(R.string.tab_tasks)) }
         )
         NavigationBarItem(
             selected = selectedTab == 1,
@@ -171,13 +173,13 @@ fun MainNavigationBar(
                     Icon(Icons.Default.Inbox, null)
                 }
             },
-            label = { Text("收件箱") }
+            label = { Text(stringResource(R.string.tab_inbox)) }
         )
         NavigationBarItem(
             selected = selectedTab == 2,
             onClick = { onTabSelected(2) },
             icon = { Icon(Icons.Default.Dns, null) },
-            label = { Text("信息流") }
+            label = { Text(stringResource(R.string.tab_stream)) }
         )
     }
 }

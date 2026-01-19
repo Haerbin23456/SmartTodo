@@ -83,9 +83,17 @@ object DeepSeekHelper {
         try {
             val response = client.newCall(request).execute()
             if (!response.isSuccessful) {
+                val errorBody = response.body.string()
+                val userFriendlyError = when (response.code) {
+                    401 -> "API Key 无效或已过期"
+                    402 -> "账户余额不足"
+                    429 -> "请求过于频繁，请稍后再试"
+                    500, 503 -> "AI 服务端繁忙，请稍后重试"
+                    else -> "API 错误: ${response.code}"
+                }
                 return@withTimeout AIAnalysisResult(
                     action = Constants.ACTION_IGNORE,
-                    rawLog = "API Error: ${response.code} - ${response.body.string()}"
+                    rawLog = "$userFriendlyError\n详细信息: $errorBody"
                 )
             }
 
@@ -95,7 +103,7 @@ object DeepSeekHelper {
                 
                 // Check for silence timeout
                 if (System.currentTimeMillis() - lastUpdateTime > silenceTimeoutMs) {
-                    throw IOException("AI output stalled for more than $silenceTimeoutSec seconds")
+                    throw IOException("AI 响应超时 ($silenceTimeoutSec 秒无输出)")
                 }
 
                 if (line.startsWith("data: ")) {
@@ -118,16 +126,26 @@ object DeepSeekHelper {
                 }
             }
             
-            if (fullContent.isBlank()) throw IOException("Empty response from AI")
+            if (fullContent.isBlank()) throw IOException("AI 返回内容为空")
              
              // Pass the actual fullContent as rawLog so it's preserved in DB
              parseAnalysisResult(fullContent, fullContent)
  
+         } catch (e: java.net.UnknownHostException) {
+             AIAnalysisResult(
+                 action = Constants.ACTION_IGNORE,
+                 rawLog = "网络不可用，请检查联网状态"
+             )
+         } catch (e: java.net.SocketTimeoutException) {
+             AIAnalysisResult(
+                 action = Constants.ACTION_IGNORE,
+                 rawLog = "连接超时，请检查网络环境"
+             )
          } catch (e: Exception) {
              Log.e("DeepSeek", "Streaming error", e)
              AIAnalysisResult(
                  action = Constants.ACTION_IGNORE,
-                 rawLog = "Streaming Error: ${e.message}\nPartial Content: $fullContent"
+                 rawLog = "处理出错: ${e.message}\n已获取内容: $fullContent"
              )
          }
     }

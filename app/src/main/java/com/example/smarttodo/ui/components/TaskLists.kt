@@ -20,6 +20,11 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Inbox
+import androidx.compose.ui.res.stringResource
+import com.example.smarttodo.R
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TaskList(
@@ -29,9 +34,10 @@ fun TaskList(
     onDelete: (SmartTask) -> Unit
 ) {
     if (tasks.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("暂无待办事项", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.outline)
-        }
+        EmptyStateView(
+            icon = Icons.Default.CheckCircle,
+            message = stringResource(R.string.empty_tasks)
+        )
     } else {
         LazyColumn(
             contentPadding = PaddingValues(16.dp),
@@ -60,19 +66,10 @@ fun InboxList(
     onDelete: (SmartTask) -> Unit
 ) {
     if (tasks.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(
-                    Icons.Default.Inbox,
-                    contentDescription = null,
-                    modifier = Modifier.size(48.dp),
-                    tint = MaterialTheme.colorScheme.surfaceVariant
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text("收件箱是空的", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.outline)
-                Text("AI 识别到的新事项会出现在这里", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
-            }
-        }
+        EmptyStateView(
+            icon = Icons.Default.Inbox,
+            message = stringResource(R.string.empty_inbox)
+        )
     } else {
         LazyColumn(
             contentPadding = PaddingValues(16.dp),

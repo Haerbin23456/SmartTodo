@@ -21,11 +21,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.smarttodo.R
 import com.example.smarttodo.SmartTodoViewModel
 import com.example.smarttodo.data.RawMessage
 import com.example.smarttodo.data.SmartTask
@@ -44,6 +52,8 @@ fun TaskDetailScreen(
     viewModel: SmartTodoViewModel,
     onNavigateUp: () -> Unit
 ) {
+    val focusManager = LocalFocusManager.current
+    val haptic = LocalHapticFeedback.current
     var task by remember { mutableStateOf<SmartTask?>(null) }
     var evidence by remember { mutableStateOf<List<RawMessage>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
@@ -127,12 +137,14 @@ fun TaskDetailScreen(
                     TextField(
                         value = title,
                         onValueChange = { title = it },
-                        placeholder = { Text("任务标题") },
+                        placeholder = { Text(stringResource(R.string.hint_title)) },
                         textStyle = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         ),
                         maxLines = 2,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = Color.Transparent,
                             unfocusedContainerColor = Color.Transparent,
@@ -173,7 +185,7 @@ fun TaskDetailScreen(
                             viewModel.deleteTask(t)
                             onNavigateUp()
                         }
-                    }) { Icon(Icons.Default.Delete, "Delete") }
+                    }) { Icon(Icons.Default.Delete, stringResource(R.string.action_delete)) }
                     TextButton(
                         onClick = {
                             task?.let { t ->
@@ -188,7 +200,7 @@ fun TaskDetailScreen(
                                 onNavigateUp()
                             }
                         }
-                    ) { Text("保存") }
+                    ) { Text(stringResource(R.string.action_save)) }
                 }
             )
         }
@@ -205,7 +217,7 @@ fun TaskDetailScreen(
             ) {
                 // --- Notes & Time ---
                 item {
-                    SectionHeader("详细信息", Icons.Default.Info)
+                    SectionHeader(stringResource(R.string.label_notes), Icons.Default.Info)
                     OutlinedCard(
                         modifier = Modifier.fillMaxWidth(),
                         shape = SmartTodoCardDefaults.CardShape,
@@ -218,11 +230,11 @@ fun TaskDetailScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("备注内容", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                                Text(stringResource(R.string.label_notes), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                                 IconButton(onClick = { isEditingNotes = !isEditingNotes }, modifier = Modifier.size(24.dp)) {
                                     Icon(
                                         if (isEditingNotes) Icons.Default.Visibility else Icons.Default.Edit,
-                                        contentDescription = if (isEditingNotes) "预览" else "编辑",
+                                        contentDescription = if (isEditingNotes) stringResource(R.string.action_preview) else stringResource(R.string.action_edit),
                                         modifier = Modifier.size(16.dp),
                                         tint = MaterialTheme.colorScheme.primary
                                     )
@@ -233,8 +245,13 @@ fun TaskDetailScreen(
                                 TextField(
                                     value = notes,
                                     onValueChange = { notes = it },
-                                    placeholder = { Text("补充更多细节...") },
+                                    placeholder = { Text(stringResource(R.string.hint_notes)) },
                                     modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp),
+                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                    keyboardActions = KeyboardActions(onDone = { 
+                                        isEditingNotes = false
+                                        focusManager.clearFocus()
+                                    }),
                                     colors = TextFieldDefaults.colors(
                                         focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
                                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
@@ -258,7 +275,7 @@ fun TaskDetailScreen(
                                 ) {
                                     Column(modifier = Modifier.padding(12.dp)) {
                                         if (notes.isBlank()) {
-                                            Text("补充更多细节...", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+                                            Text(stringResource(R.string.hint_notes), color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
                                         } else {
                                             MarkdownText(
                                                 markdown = if (isNotesExpanded || notes.length <= 200) notes else notes.take(200) + "...",
@@ -268,7 +285,7 @@ fun TaskDetailScreen(
                                             )
                                             if (notes.length > 200) {
                                                 Text(
-                                                    if (isNotesExpanded) "收起" else "展开全文",
+                                                    if (isNotesExpanded) stringResource(R.string.notes_collapse) else stringResource(R.string.notes_expand),
                                                     style = MaterialTheme.typography.labelMedium,
                                                     color = MaterialTheme.colorScheme.primary,
                                                     modifier = Modifier.padding(top = 8.dp).align(Alignment.End)
@@ -279,7 +296,7 @@ fun TaskDetailScreen(
                                 }
                             }
                             Spacer(Modifier.height(20.dp))
-                            Text("提醒时间", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                            Text(stringResource(R.string.label_reminder_time), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                             Spacer(Modifier.height(8.dp))
                             Surface(
                                 onClick = { showDatePicker = true },
@@ -304,7 +321,7 @@ fun TaskDetailScreen(
 
                 // --- Checklist ---
                 item {
-                    SectionHeader("清单步骤", Icons.Default.Checklist)
+                    SectionHeader(stringResource(R.string.label_checklist), Icons.Default.Checklist)
                     OutlinedCard(
                         modifier = Modifier.fillMaxWidth(),
                         shape = SmartTodoCardDefaults.CardShape,
@@ -319,13 +336,16 @@ fun TaskDetailScreen(
                                 ) {
                                     Checkbox(
                                         checked = item.isDone,
-                                        onCheckedChange = { subtasks[index] = item.copy(isDone = it) }
+                                        onCheckedChange = { checked ->
+                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            subtasks[index] = item.copy(isDone = checked)
+                                        }
                                     )
                                     TextField(
                                         value = item.content,
                                         onValueChange = { subtasks[index] = item.copy(content = it) },
                                         modifier = Modifier.weight(1f),
-                                        placeholder = { Text("输入步骤...", style = MaterialTheme.typography.bodyMedium) },
+                                        placeholder = { Text(stringResource(R.string.hint_step), style = MaterialTheme.typography.bodyMedium) },
                                         textStyle = MaterialTheme.typography.bodyLarge.copy(
                                             textDecoration = if (item.isDone) TextDecoration.LineThrough else null,
                                             color = if (item.isDone) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface
@@ -348,7 +368,7 @@ fun TaskDetailScreen(
                             ) {
                                 Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text("添加步骤")
+                                Text(stringResource(R.string.action_add))
                             }
                         }
                     }
@@ -356,7 +376,7 @@ fun TaskDetailScreen(
 
                 // --- AI Summary ---
                 item {
-                    SectionHeader("AI 摘要", Icons.Default.AutoAwesome)
+                    SectionHeader(stringResource(R.string.label_ai_summary), Icons.Default.AutoAwesome)
                     OutlinedCard(
                         modifier = Modifier.fillMaxWidth(),
                         shape = SmartTodoCardDefaults.CardShape,
@@ -375,7 +395,7 @@ fun TaskDetailScreen(
 
                 // --- Evidence ---
                 if (evidence.isNotEmpty()) {
-                    item { SectionHeader("信息来源", Icons.Default.Source) }
+                    item { SectionHeader(stringResource(R.string.label_evidence), Icons.Default.Source) }
                     items(evidence) { msg ->
                         Box(modifier = Modifier.animateItem()) {
                             var showDialog by remember { mutableStateOf(false) }
