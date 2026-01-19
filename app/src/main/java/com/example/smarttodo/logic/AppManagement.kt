@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -246,7 +247,7 @@ fun SettingsDialog(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AppManagementDialog(
     onDismiss: () -> Unit,
@@ -335,19 +336,15 @@ fun AppManagementDialog(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        // 优化的加载指示器
+                        // 优化的波浪加载指示器 (M3 1.3 Expressive)
                         Box(contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(
+                            CircularWavyProgressIndicator(
                                 modifier = Modifier.size(64.dp),
-                                strokeWidth = 4.dp,
-                                strokeCap = StrokeCap.Round,
                                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                progress = { 1f }
+                                amplitude = 1f
                             )
-                            CircularProgressIndicator(
+                            CircularWavyProgressIndicator(
                                 modifier = Modifier.size(64.dp),
-                                strokeWidth = 4.dp,
-                                strokeCap = StrokeCap.Round,
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }

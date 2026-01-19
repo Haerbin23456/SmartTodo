@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import com.example.smarttodo.ui.components.LogDetailDialog
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -45,7 +46,7 @@ import dev.jeziellago.compose.markdowntext.MarkdownText
 import java.text.SimpleDateFormat
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun TaskDetailScreen(
     taskId: Long,
@@ -206,7 +207,7 @@ fun TaskDetailScreen(
         }
     ) { padding ->
         if (isLoading) {
-            Box(Modifier.fillMaxSize().padding(padding), Alignment.Center) { CircularProgressIndicator() }
+            Box(Modifier.fillMaxSize().padding(padding), Alignment.Center) { CircularWavyProgressIndicator() }
         } else if (task == null) {
             Box(Modifier.fillMaxSize().padding(padding), Alignment.Center) { Text(stringResource(R.string.error_task_not_found)) }
         } else {

@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.StopCircle
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import com.example.smarttodo.ui.components.SmartOutlinedCard
@@ -33,7 +34,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun RawStreamList(
     messages: List<RawMessage>,
@@ -55,8 +56,8 @@ fun RawStreamList(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column {
-                    LinearProgressIndicator(
-                        modifier = Modifier.fillMaxWidth().height(2.dp),
+                    LinearWavyProgressIndicator(
+                        modifier = Modifier.fillMaxWidth().height(4.dp),
                         color = MaterialTheme.colorScheme.primary,
                         trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                     )
@@ -66,9 +67,8 @@ fun RawStreamList(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(12.dp),
-                                strokeWidth = 1.5.dp,
+                            CircularWavyProgressIndicator(
+                                modifier = Modifier.size(16.dp),
                                 color = MaterialTheme.colorScheme.primary
                             )
                             Spacer(Modifier.width(8.dp))
